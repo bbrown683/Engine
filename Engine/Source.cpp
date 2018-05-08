@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
 
+	RenderingInstance instance(window);
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 	}
