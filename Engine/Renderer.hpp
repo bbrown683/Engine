@@ -1,51 +1,40 @@
 #pragma once
-#include <string>
-#include <thread>
-#include <vector>
+
+#if defined(__linux__)
+
+#elif defined(_WIN32)
 #define VK_USE_PLATFORM_WIN32_KHR
+#endif
 #define VULKAN_HPP_TYPESAFE_CONVERSION
 #include <vulkan/vulkan.hpp>
 
 typedef struct GLFWwindow GLFWwindow;
 
-/// Instance-level Vulkan.
-/// Creates instance, surface, and retreives available GPUs.
-class RenderingInstance {
+class Renderer {
 public:
-	RenderingInstance(GLFWwindow*);
-	vk::UniqueInstance& getInstance();
-	std::vector<vk::PhysicalDevice>& getAllPhysicalDevices();
-	vk::UniqueSurfaceKHR& getSurface();
+	Renderer(GLFWwindow*, bool);
+	void updateSwapchain();
+	void present();
 private:
+	vk::PhysicalDevice& selectPhysicalDevice(std::vector<vk::PhysicalDevice>&);
+	vk::Format selectSurfaceFormat(std::vector<vk::SurfaceFormatKHR>);
+
+	vk::UniqueInstance instance;
+	vk::UniqueSurfaceKHR surface;
+	std::vector<const char*> availableExtensions;
+	std::vector<const char*> availableLayers;
 	std::vector<const char*> enabledExtensions;
 	std::vector<const char*> enabledLayers;
-	vk::UniqueInstance instance;
-	std::vector<vk::PhysicalDevice> physicalDevices;
-	vk::UniqueSurfaceKHR surface;
-};
 
-/// Device-level Vulkan.
-/// Submits commands to specified GPU and window surface.
-class RenderingDevice {
-public:
-	RenderingDevice(vk::PhysicalDevice&, vk::UniqueSurfaceKHR&);
-	bool present();
-	bool updateSwapchain();
-	vk::UniqueDevice& getDevice();
-	vk::UniqueSwapchainKHR& getSwapchain();
-private:
-	vk::PhysicalDevice& physicalDevice;
-	vk::UniqueSurfaceKHR& surface;
+	uint8_t selectedPhysicalDeviceIndex;
+	std::vector<vk::PhysicalDevice> physicalDevices;
+	std::vector<vk::PhysicalDeviceFeatures> physicalDeviceFeatures;
+	std::vector<vk::PhysicalDeviceProperties> physicalDeviceProperties;
+	std::vector<std::vector<vk::QueueFamilyProperties>> physicalDeviceQueueFamilies;
+	std::vector<vk::SurfaceCapabilitiesKHR> physicalDeviceSurfaceCapabilities;
+	std::vector<std::vector<vk::SurfaceFormatKHR>> physicalDeviceSurfaceFormats;
+	std::vector<std::vector<vk::PresentModeKHR>> physicalDeviceSurfacePresentModes;
+
 	vk::UniqueDevice device;
 	vk::UniqueSwapchainKHR swapchain;
-	uint32_t threadCount;
-};
-
-/// Executes rendering commands in parallel from the main thread.
-class ThreadedCommandPool {
-public:
-	ThreadedCommandPool(vk::UniqueDevice&);
-private:
-	std::thread thread;
-	vk::UniqueCommandPool commandPool;
 };

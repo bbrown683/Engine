@@ -1,15 +1,19 @@
 #include "Renderer.hpp"
 
-#define GLFW_INCLUDE_VULKAN
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#include <iostream>
+Renderer::Renderer(GLFWwindow* window, bool trace) {
+	std::vector<vk::ExtensionProperties> extensionProperties = vk::enumerateInstanceExtensionProperties();
+	for (vk::ExtensionProperties property : extensionProperties)
+		availableExtensions.push_back(property.extensionName);
+	std::vector<vk::LayerProperties> layerProperties = vk::enumerateInstanceLayerProperties();
+	for (vk::LayerProperties property : layerProperties)
+		availableLayers.push_back(property.layerName);
 
-RenderingInstance::RenderingInstance(GLFWwindow* window) {
 	vk::ApplicationInfo appInfo;
-#ifdef VK_API_VERSION_1_1
+#ifdef VK_VERSION_1_1
 	appInfo.setApiVersion(VK_API_VERSION_1_1);
 #else
 	appInfo.setApiVersion(VK_API_VERSION_1_0);
@@ -29,9 +33,6 @@ RenderingInstance::RenderingInstance(GLFWwindow* window) {
 	const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 	instanceExtensions.insert(instanceExtensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-	for (const char* extension : instanceExtensions)
-		std::cout << extension << std::endl;
- 
 	vk::InstanceCreateInfo instanceInfo;
 	instanceInfo.setPApplicationInfo(&appInfo);
 	instanceInfo.setEnabledExtensionCount(static_cast<uint32_t>(instanceExtensions.size()));
@@ -40,7 +41,6 @@ RenderingInstance::RenderingInstance(GLFWwindow* window) {
 	instanceInfo.setPpEnabledLayerNames(instanceLayers.data());
 
 	instance = vk::createInstanceUnique(instanceInfo);
-	physicalDevices = instance->enumeratePhysicalDevices();
 
 #if defined(__linux__)
 	// Detect MIR, Xcb, Wayland.
@@ -50,43 +50,22 @@ RenderingInstance::RenderingInstance(GLFWwindow* window) {
 	surfaceCreateInfo.setHwnd(glfwGetWin32Window(window));
 	surface = instance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
 #endif
+
+	physicalDevices = instance->enumeratePhysicalDevices();
+	for (vk::PhysicalDevice physicalDevice : physicalDevices) {
+		physicalDeviceFeatures.push_back(physicalDevice.getFeatures());
+		physicalDeviceQueueFamilies.push_back(physicalDevice.getQueueFamilyProperties());
+		physicalDeviceProperties.push_back(physicalDevice.getProperties());
+		physicalDeviceSurfaceCapabilities.push_back(physicalDevice.getSurfaceCapabilitiesKHR(surface.get()));
+		physicalDeviceSurfaceFormats.push_back(physicalDevice.getSurfaceFormatsKHR(surface.get()));
+		physicalDeviceSurfacePresentModes.push_back(physicalDevice.getSurfacePresentModesKHR(surface.get()));
+	}
 }
 
-vk::UniqueInstance& RenderingInstance::getInstance() {
-	return instance;
+vk::PhysicalDevice& Renderer::selectPhysicalDevice(std::vector<vk::PhysicalDevice>& physicalDevices) {
+	return physicalDevices[0];
 }
 
-std::vector<vk::PhysicalDevice>& RenderingInstance::getAllPhysicalDevices() {
-	return physicalDevices;
-}
-
-vk::UniqueSurfaceKHR& RenderingInstance::getSurface() {
-	return surface;
-}
-
-RenderingDevice::RenderingDevice(vk::PhysicalDevice& physicalDevice, vk::UniqueSurfaceKHR& surface)
-	: physicalDevice(physicalDevice), surface(surface) {
-	vk::DeviceCreateInfo deviceInfo;
-	vk::SwapchainCreateInfoKHR swapchainInfo;
-	threadCount = std::thread::hardware_concurrency();
-}
-
-bool RenderingDevice::present() {
-	return false;
-}
-
-bool RenderingDevice::updateSwapchain() {
-	return false;
-}
-
-vk::UniqueDevice& RenderingDevice::getDevice() {
-	return device;
-}
-
-vk::UniqueSwapchainKHR& RenderingDevice::getSwapchain() {
-	return swapchain;
-}
-
-ThreadedCommandPool::ThreadedCommandPool(vk::UniqueDevice& device) {
-	vk::CommandPoolCreateInfo commandPoolInfo;
+vk::Format Renderer::selectSurfaceFormat(std::vector<vk::SurfaceFormatKHR> surfaceFormats) {
+	return vk::Format::eR8G8B8A8Unorm;
 }
