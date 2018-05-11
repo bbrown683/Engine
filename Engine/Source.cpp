@@ -7,6 +7,13 @@
 #define VULKAN_HPP_TYPESAFE_CONVERSION
 #include <vulkan/vulkan.hpp>
 
+#include <iostream>
+
+#include "GameConfig.hpp"
+#include "AudioManager.hpp"
+#include "GraphicsManager.hpp"
+#include "WindowManager.hpp"
+
 enum class ErrorSource {
 	Glfw = -1,
 	Vulkan = -2
@@ -15,6 +22,48 @@ enum class ErrorSource {
 int main(int argc, char** argv) {
 	std::vector<const char*> args;
 	args.insert(args.begin(), argv, argv + argc);
+
+	// CONFIG
+	// ============================================================================================
+	config_t config;
+	config_init(&config);
+	
+	// Check if there is a config file already.
+	// If not create a default one.
+	if (!config_read_file(&config, "settings.cfg")) {
+		config_set_tab_width(&config, 4);
+		config_setting_t* rootGroup = config_root_setting(&config);
+		config_setting_t* version = config_setting_add(rootGroup, "version", CONFIG_TYPE_ARRAY);
+		config_setting_set_int_elem(version, -1, 1);
+		config_setting_set_int_elem(version, -1, 0);
+		config_setting_set_int_elem(version, -1, 0);
+		config_setting_t* applicationGroup = config_setting_add(rootGroup, "application", CONFIG_TYPE_GROUP);
+		config_setting_t* windowGroup = config_setting_add(applicationGroup, "window", CONFIG_TYPE_GROUP);
+		config_setting_t* graphicsGroup = config_setting_add(applicationGroup, "graphics", CONFIG_TYPE_GROUP);
+		config_setting_t* audioGroup = config_setting_add(applicationGroup, "audio", CONFIG_TYPE_GROUP);
+
+		config_setting_t* x = config_setting_add(windowGroup, "x", CONFIG_TYPE_INT);
+		config_setting_set_int(x, 0);
+		config_setting_t* y = config_setting_add(windowGroup, "y", CONFIG_TYPE_INT);
+		config_setting_set_int(y, 0);
+		config_setting_t* width = config_setting_add(windowGroup, "width", CONFIG_TYPE_INT);
+		config_setting_set_int(width, 1024);
+		config_setting_t* height = config_setting_add(windowGroup, "height", CONFIG_TYPE_INT);
+		config_setting_set_int(height, 768);
+		config_setting_t* mode = config_setting_add(windowGroup, "mode", CONFIG_TYPE_INT);
+		config_setting_set_int(mode, static_cast<int>(WindowMode::Windowed));
+		config_setting_t* vsync = config_setting_add(graphicsGroup, "vsync", CONFIG_TYPE_BOOL);
+		config_setting_set_bool(vsync, true);
+		config_setting_t* textureQuality = config_setting_add(graphicsGroup, "textureQuality", CONFIG_TYPE_INT);
+		config_setting_set_int(textureQuality, static_cast<int>(Quality::Ultra));
+		config_setting_t* textureFilterQuality = config_setting_add(graphicsGroup, "textureFiltering", CONFIG_TYPE_INT);
+		config_setting_set_int(textureFilterQuality, static_cast<int>(TextureFiltering::Anisotropic16x));
+		config_setting_t* masterVolume = config_setting_add(audioGroup, "masterVolume", CONFIG_TYPE_FLOAT);
+		config_setting_set_float(masterVolume, 1.0f);
+		config_write_file(&config, "settings.cfg");
+	}
+	config_destroy(&config);
+	// ===============================================================================================
 
 	if (!glfwInit())
 		return static_cast<int>(ErrorSource::Glfw);
@@ -130,12 +179,16 @@ int main(int argc, char** argv) {
 
 	std::vector<const char*> enabledDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
+	vk::PhysicalDeviceFeatures enabledFeatures;
+	enabledFeatures.setSamplerAnisotropy(true);
+
 	vk::DeviceCreateInfo deviceInfo;
 	deviceInfo.setEnabledLayerCount(0);
 	deviceInfo.setPpEnabledExtensionNames(enabledDeviceExtensions.data());
 	deviceInfo.setEnabledExtensionCount(static_cast<uint32_t>(enabledDeviceExtensions.size()));
 	deviceInfo.setPQueueCreateInfos(&deviceQueueInfos);
 	deviceInfo.setQueueCreateInfoCount(1);
+	deviceInfo.setPEnabledFeatures(&enabledFeatures);
 
 	vk::UniqueDevice device;	
 	try {
