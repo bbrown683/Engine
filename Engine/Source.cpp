@@ -2,53 +2,45 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <libconfig.h>
-#if defined(__linux__)
 
-#elif defined(_WIN32)
 #define VK_USE_PLATFORM_WIN32_KHR
-#endif
 #define VULKAN_HPP_TYPESAFE_CONVERSION
 #include <vulkan/vulkan.hpp>
 
-#include "Renderer.hpp"
-
-enum class ErrorType {
-	GlfwInitFailed						= -1,
-	GlfwVulkanNotFound					= -2,
-	VulkanInstanceCreationFailed		= -3,
-	VulkanSurfaceCreationFailed			= -4,
+enum class ErrorSource {
+	Glfw = -1,
+	Vulkan = -2
 };
 
 int main(int argc, char** argv) {
 	std::vector<const char*> args;
 	args.insert(args.begin(), argv, argv + argc);
 
-	int initResult = glfwInit();
-	if (initResult != GLFW_TRUE)
-		return static_cast<int>(ErrorType::GlfwInitFailed);
+	if (!glfwInit())
+		return static_cast<int>(ErrorSource::Glfw);
 
 	if (!glfwVulkanSupported())
-		return static_cast<int>(ErrorType::GlfwVulkanNotFound);
+		return static_cast<int>(ErrorSource::Glfw);
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
 
 	std::vector<vk::ExtensionProperties> extensionProperties = vk::enumerateInstanceExtensionProperties();
-	std::vector<const char*> availableExtensions;
-	for (vk::ExtensionProperties property : extensionProperties)
-		availableExtensions.push_back(property.extensionName);
+	bool surfaceKHRSupport = false, surfaceKHRWin32Support = false;
+	for (vk::ExtensionProperties extension : extensionProperties) {
+		if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME))
+			surfaceKHRSupport = true;
+		if (strcmp(extension.extensionName, VK_KHR_WIN32_SURFACE_EXTENSION_NAME))
+			surfaceKHRWin32Support = true;
+	}
+	
+	if (!surfaceKHRSupport || !surfaceKHRWin32Support)
+		return static_cast<int>(ErrorSource::Vulkan);
 
 	std::vector<vk::LayerProperties> layerProperties = vk::enumerateInstanceLayerProperties();
-	std::vector<const char*> availableLayers;
-	for (vk::LayerProperties property : layerProperties)
-		availableLayers.push_back(property.layerName);
 
 	vk::ApplicationInfo appInfo;
-#ifdef VK_VERSION_1_1
-	appInfo.setApiVersion(VK_API_VERSION_1_1);
-#else
-	appInfo.setApiVersion(VK_API_VERSION_1_0);
-#endif
+	appInfo.setApiVersion(VK_MAKE_VERSION(1, 0, 0));
 	appInfo.setPApplicationName("Engine");
 
 	std::vector<const char*> instanceExtensions;
@@ -76,60 +68,132 @@ int main(int argc, char** argv) {
 		instance = vk::createInstanceUnique(instanceInfo);
 	}
 	catch (std::runtime_error e) {
-		return static_cast<int>(ErrorType::VulkanInstanceCreationFailed);
+		return static_cast<int>(ErrorSource::Vulkan);
 	}
 
 	vk::UniqueSurfaceKHR surface;
-#if defined(__linux__)
-	// Determine which windowing API is being used via glfwRequiredExtensions.
-#elif defined(_WIN32)
 	vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
 	surfaceCreateInfo.setHinstance(GetModuleHandle(nullptr));
 	surfaceCreateInfo.setHwnd(glfwGetWin32Window(window));
 	surface = instance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
-#endif
 
-	vk::PhysicalDevice physicalDevice;
-	{
-		std::vector<vk::PhysicalDevice> physicalDevices;
-		std::vector<vk::PhysicalDeviceFeatures> features;
-		std::vector<vk::PhysicalDeviceProperties> properties;
-		std::vector<std::vector<vk::QueueFamilyProperties>> queueFamilies;
-		std::vector<vk::SurfaceCapabilitiesKHR> capabilities;
-		std::vector<std::vector<vk::SurfaceFormatKHR>> surfaceFormats;
-		std::vector<std::vector<vk::PresentModeKHR>> surfacePresentModes;
+	// TODO: Allow user to pick GPU via settings.
+	std::vector<vk::PhysicalDevice> physicalDevices = instance->enumeratePhysicalDevices();
+	vk::PhysicalDevice physicalDevice = physicalDevices.front();
 
-		physicalDevices = instance->enumeratePhysicalDevices();
-		uint32_t physicalDeviceIndex = 0;
-		for (vk::PhysicalDevice physicalDevice : physicalDevices) {
-			features.push_back(physicalDevice.getFeatures());
-			queueFamilies.push_back(physicalDevice.getQueueFamilyProperties());
-			properties.push_back(physicalDevice.getProperties());
-		
-			for (int i = 0; i < queueFamilies[physicalDeviceIndex].size(); i++) {
-				// Only graphics queues should be checked.
-				if (queueFamilies[physicalDeviceIndex][i].queueFlags & vk::QueueFlagBits::eGraphics) {
-					// Check for surface support.
-					VkBool32 supportsSurface = physicalDevice.getSurfaceSupportKHR(i, surface.get());
-					if (supportsSurface = VK_TRUE) {
-						// If we have surface support, we will query its features.
-						capabilities.push_back(physicalDevice.getSurfaceCapabilitiesKHR(surface.get()));
-						surfaceFormats.push_back(physicalDevice.getSurfaceFormatsKHR(surface.get()));
-						surfacePresentModes.push_back(physicalDevice.getSurfacePresentModesKHR(surface.get()));
-					}
-					else {
-						// Otherwise we will need to push an empty set of objects to keep the index correct.
-						capabilities.push_back(vk::SurfaceCapabilitiesKHR());
-						surfaceFormats.push_back(std::vector<vk::SurfaceFormatKHR>());
-						surfacePresentModes.push_back(std::vector<vk::PresentModeKHR>());
-					}
-				}
-			}
-			physicalDeviceIndex++;
+	std::vector<vk::ExtensionProperties> deviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+	
+	// Check for VK_KHR_swapchain extension.
+	bool swapchainSupport = false;
+	for (vk::ExtensionProperties deviceExtension : deviceExtensions)
+		if (std::strcmp(deviceExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+			swapchainSupport = true;
+
+	if (!swapchainSupport)
+		return static_cast<int>(ErrorSource::Vulkan);
+
+	//vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
+
+	std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
+	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
+	std::vector<vk::SurfaceFormatKHR> surfaceFormats;
+	std::vector<vk::PresentModeKHR> surfacePresentModes;
+
+	std::vector<uint32_t> graphicsSupport;
+	std::vector<uint32_t> surfaceSupport;
+
+	for (int i = 0; i < queueFamilies.size(); i++) {
+		// Only graphics queues should be checked.
+		if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
+			graphicsSupport.push_back(i);
+
+		// Check for surface support.
+		VkBool32 supportsSurface = physicalDevice.getSurfaceSupportKHR(i, surface.get());
+		if (supportsSurface) {
+			surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface.get());
+			surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface.get());
+			surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(surface.get());
+			surfaceSupport.push_back(i);
 		}
 	}
 
-	//Renderer renderer(physicalDevice, surface);
+	// Graphics or Surface are not supported.
+	if (graphicsSupport.empty() || surfaceSupport.empty())
+		return static_cast<int>(ErrorSource::Vulkan);
+
+	float priority = 1.0f;
+
+	vk::DeviceQueueCreateInfo deviceQueueInfos;
+	deviceQueueInfos.setQueueFamilyIndex(0);
+	deviceQueueInfos.setQueueCount(1);
+	deviceQueueInfos.setPQueuePriorities(&priority);
+
+	std::vector<const char*> enabledDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+	vk::DeviceCreateInfo deviceInfo;
+	deviceInfo.setEnabledLayerCount(0);
+	deviceInfo.setPpEnabledExtensionNames(enabledDeviceExtensions.data());
+	deviceInfo.setEnabledExtensionCount(static_cast<uint32_t>(enabledDeviceExtensions.size()));
+	deviceInfo.setPQueueCreateInfos(&deviceQueueInfos);
+	deviceInfo.setQueueCreateInfoCount(1);
+
+	vk::UniqueDevice device;	
+	try {
+		device = physicalDevice.createDeviceUnique(deviceInfo);
+	}
+	catch (std::runtime_error e) {
+		return static_cast<int>(ErrorSource::Vulkan);
+	}
+
+	// Select present mode.
+	// Prefer to use Mailbox present mode if it exists.
+	vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+	if (surfaceCapabilities.minImageCount > 2)
+		for (vk::PresentModeKHR tempPresentMode : surfacePresentModes)
+			if (tempPresentMode == vk::PresentModeKHR::eMailbox)
+				presentMode = tempPresentMode;
+
+	// Select swapchain format.
+	vk::Format format = vk::Format::eUndefined;
+
+	// Check to see if the driver lets us select which one we want.
+	if (surfaceFormats.size() == 1 && surfaceFormats[0].format == vk::Format::eUndefined)
+		format = vk::Format::eR8G8B8A8Unorm;
+	else {
+		// Iterate through each format and check to see if it has the format we want.
+		for (vk::SurfaceFormatKHR surfaceFormat : surfaceFormats)
+			if (surfaceFormat.format == vk::Format::eR8G8B8A8Unorm)
+				format = surfaceFormat.format;
+		// If we still didnt find a format just pick the first one we get.
+		if (format == vk::Format::eUndefined)
+			format = surfaceFormats.front().format;
+	}
+
+	vk::SwapchainCreateInfoKHR swapchainInfo;
+	swapchainInfo.setSurface(surface.get());
+	swapchainInfo.setMinImageCount(surfaceCapabilities.minImageCount);
+	swapchainInfo.setImageExtent(surfaceCapabilities.currentExtent);
+	swapchainInfo.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear);
+	swapchainInfo.setImageFormat(format);
+	swapchainInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst);
+	swapchainInfo.setClipped(true);
+	swapchainInfo.setImageArrayLayers(1);
+	swapchainInfo.setPresentMode(presentMode);
+	swapchainInfo.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity);
+	swapchainInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
+
+	vk::UniqueSwapchainKHR swapchain = device->createSwapchainKHRUnique(swapchainInfo);
+
+	vk::CommandPoolCreateInfo commandPoolInfo;
+	commandPoolInfo.setQueueFamilyIndex(0);
+	vk::UniqueCommandPool commandPool = device->createCommandPoolUnique(commandPoolInfo);
+	
+	vk::CommandBufferAllocateInfo allocateInfo;
+	allocateInfo.setCommandPool(commandPool.get());
+	allocateInfo.setCommandBufferCount(1);
+	allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
+
+	auto commandBuffer = device->allocateCommandBuffersUnique(allocateInfo);
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
