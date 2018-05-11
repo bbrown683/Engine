@@ -195,6 +195,31 @@ int main(int argc, char** argv) {
 
 	auto commandBuffer = device->allocateCommandBuffersUnique(allocateInfo);
 
+	vk::FenceCreateInfo fenceInfo;
+	vk::UniqueFence fence = device->createFenceUnique(fenceInfo);
+
+	vk::Viewport viewport;
+	viewport.setWidth(static_cast<float>(surfaceCapabilities.currentExtent.width));
+	viewport.setHeight(static_cast<float>(surfaceCapabilities.currentExtent.height));
+	viewport.setMinDepth(0.0f);
+	viewport.setMaxDepth(1.0f);
+
+	vk::CommandBufferBeginInfo beginInfo;
+	commandBuffer[0]->begin(beginInfo);
+	commandBuffer[0]->setViewport(0, viewport);
+	commandBuffer[0]->end();
+
+	vk::Queue queue = device->getQueue(0, 0);
+	vk::SubmitInfo submitInfo;
+	submitInfo.setCommandBufferCount(1);
+	submitInfo.setPCommandBuffers(&commandBuffer[0].get());
+	queue.submit(submitInfo, fence.get());
+
+	// Wait for command buffer to complete.
+	vk::Result fenceStatus = device->waitForFences(fence.get(), true, UINT64_MAX);
+	if (fenceStatus != vk::Result::eSuccess && fenceStatus != vk::Result::eTimeout)
+		return static_cast<int>(ErrorSource::Vulkan);
+
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 	}
