@@ -6,7 +6,6 @@ WindowManager::WindowManager(UserWindowSettings settings) : settings(settings) {
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
-
 }
 
 WindowManager::~WindowManager() {

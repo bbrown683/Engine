@@ -43,10 +43,10 @@ class GameConfig {
 public:
 	GameConfig();
 	~GameConfig();
+	bool useDefaultSettings();
 	UserAudioSettings getUserAudioSettings();
 	UserGraphicsSettings getUserGraphicsSettings();
 	UserWindowSettings getUserWindowSettings();
-	bool setDefaultSettings();
 	bool setAudioMasterVolume(int volume);
 	bool setGraphicsVsync(bool vsync);
 	bool setGraphicsTextureQuality(Quality textureQuality);

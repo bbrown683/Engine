@@ -3,19 +3,21 @@
 #include <iostream>
 
 Renderer::Renderer(UserGraphicsSettings settings, vk::PhysicalDevice& physicalDevice, vk::UniqueSurfaceKHR& surface) {
-	std::vector<vk::ExtensionProperties> deviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+	std::vector<vk::ExtensionProperties> deviceExtensions;
+	auto deviceExtensionsResult = physicalDevice.enumerateDeviceExtensionProperties();
+	if (deviceExtensionsResult.result == vk::Result::eSuccess)
+		deviceExtensions = deviceExtensionsResult.value;
+	
 	// Check for VK_KHR_swapchain extension.
 	bool swapchainSupport = false;
 	for (vk::ExtensionProperties deviceExtension : deviceExtensions)
 		if (std::strcmp(deviceExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 			swapchainSupport = true;
 
-	if (!swapchainSupport) {
-		std::cout << "CRITICAL: Hardware device does not support presenting to a surface!\n";
-	}
-	
-	vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
-	physicalDeviceName = properties.deviceName;
+	if (!swapchainSupport)
+		throw std::runtime_error("CRITICAL: Hardware device does not support presenting to a surface!");
+
+	//vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
 
 	std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
@@ -31,19 +33,30 @@ Renderer::Renderer(UserGraphicsSettings settings, vk::PhysicalDevice& physicalDe
 			graphicsSupport.push_back(i);
 
 		// Check for surface support.
-		VkBool32 supportsSurface = physicalDevice.getSurfaceSupportKHR(i, surface.get());
+		VkBool32 supportsSurface = VK_TRUE;
+		auto surfaceSupportResult = physicalDevice.getSurfaceSupportKHR(i, surface.get());
+		if (surfaceSupportResult.result == vk::Result::eSuccess)
+			supportsSurface = surfaceSupportResult.value;
 		if (supportsSurface) {
-			surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface.get());
-			surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface.get());
-			surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(surface.get());
+			auto surfaceCapabilitiesResult = physicalDevice.getSurfaceCapabilitiesKHR(surface.get());
+			if (surfaceCapabilitiesResult.result == vk::Result::eSuccess)
+				surfaceCapabilities = surfaceCapabilitiesResult.value;
+
+			auto surfaceFormatsResult = physicalDevice.getSurfaceFormatsKHR(surface.get());
+			if (surfaceFormatsResult.result == vk::Result::eSuccess)
+				surfaceFormats = surfaceFormatsResult.value;
+
+			auto surfacePresentModesResult = physicalDevice.getSurfacePresentModesKHR(surface.get());
+			if (surfacePresentModesResult.result == vk::Result::eSuccess)
+				surfacePresentModes = surfacePresentModesResult.value;
+
 			surfaceSupport.push_back(i);
 		}
 	}
 
 	// Graphics or Surface are not supported.
-	if (graphicsSupport.empty() || surfaceSupport.empty()) {
-		std::cout << "CRITICAL: Hardware device does not support drawing or surface operations!\n";
-	}
+	if (graphicsSupport.empty() || surfaceSupport.empty())
+		throw std::runtime_error("CRITICAL: Hardware device does not support drawing or surface operations!");
 
 	float priority = 1.0f;
 
@@ -55,28 +68,27 @@ Renderer::Renderer(UserGraphicsSettings settings, vk::PhysicalDevice& physicalDe
 	std::vector<const char*> enabledDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 	vk::PhysicalDeviceFeatures enabledFeatures;
-	enabledFeatures.setSamplerAnisotropy(true);
+	enabledFeatures.samplerAnisotropy = VK_TRUE;
 
 	vk::DeviceCreateInfo deviceInfo;
-	deviceInfo.setEnabledLayerCount(0);
-	deviceInfo.setPpEnabledExtensionNames(enabledDeviceExtensions.data());
-	deviceInfo.setEnabledExtensionCount(static_cast<uint32_t>(enabledDeviceExtensions.size()));
-	deviceInfo.setPQueueCreateInfos(&deviceQueueInfos);
-	deviceInfo.setQueueCreateInfoCount(1);
-	deviceInfo.setPEnabledFeatures(&enabledFeatures);
+	deviceInfo.pEnabledFeatures = &enabledFeatures;
+	deviceInfo.enabledLayerCount = 0;
+	deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
+	deviceInfo.enabledExtensionCount = static_cast<uint32_t>(enabledDeviceExtensions.size());
+	deviceInfo.pQueueCreateInfos = &deviceQueueInfos;
+	deviceInfo.queueCreateInfoCount = 1;
 
-	try {
-		device = physicalDevice.createDeviceUnique(deviceInfo);
-	}
-	catch (std::runtime_error e) {
-		std::cout << "CRITICAL: Failed to create a rendering device: " << e.what() << std::endl;
-	}
+	auto deviceResult = physicalDevice.createDevice(deviceInfo);
+	if (deviceResult.result == vk::Result::eSuccess)
+		device = deviceResult.value;
+	else
+		throw std::runtime_error("CRITICAL: Failed to create a rendering device!");
 
 	// Select present mode.
 	// Prefer to use Mailbox present mode if it exists.
 	vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
-	 if (surfaceCapabilities.minImageCount > 2)
-	 	for (vk::PresentModeKHR tempPresentMode : surfacePresentModes)
+	if (surfaceCapabilities.minImageCount > 2)
+		for (vk::PresentModeKHR tempPresentMode : surfacePresentModes)
 			if (tempPresentMode == vk::PresentModeKHR::eMailbox)
 				presentMode = tempPresentMode;
 
@@ -97,22 +109,26 @@ Renderer::Renderer(UserGraphicsSettings settings, vk::PhysicalDevice& physicalDe
 	}
 
 	vk::SwapchainCreateInfoKHR swapchainInfo;
-	swapchainInfo.setSurface(surface.get());
-	swapchainInfo.setMinImageCount(surfaceCapabilities.minImageCount);
-	swapchainInfo.setImageExtent(surfaceCapabilities.currentExtent);
-	swapchainInfo.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear);
-	swapchainInfo.setImageFormat(format);
-	swapchainInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst);
-	swapchainInfo.setClipped(true);
-	swapchainInfo.setImageArrayLayers(1);
-	swapchainInfo.setPresentMode(presentMode);
-	swapchainInfo.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity);
-	swapchainInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
+	swapchainInfo.clipped = VK_TRUE;
+	swapchainInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+	swapchainInfo.minImageCount = surfaceCapabilities.minImageCount;
+	swapchainInfo.imageArrayLayers = 1;
+	swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
+	swapchainInfo.imageColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+	swapchainInfo.imageFormat = format;
+	swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
+	swapchainInfo.presentMode = presentMode;
+	swapchainInfo.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
+	swapchainInfo.surface = surface.get();
 
-	try {
-		swapchain = device->createSwapchainKHRUnique(swapchainInfo);
-	}
-	catch (std::runtime_error e) {
-		std::cout << "CRITICAL: Failed to create a swapchain: " << e.what() << std::endl;
-	}
+	auto swapchainResult = device.createSwapchainKHR(swapchainInfo);
+	if (swapchainResult.result == vk::Result::eSuccess)
+		swapchain = swapchainResult.value;
+	else
+		throw std::runtime_error("CRITICAL: Failed to create a swapchain for rendering surface!");
+}
+
+Renderer::~Renderer() {
+	device.destroySwapchainKHR(swapchain);
+	device.destroy();
 }

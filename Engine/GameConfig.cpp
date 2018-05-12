@@ -21,20 +21,8 @@ GameConfig::~GameConfig() {
 	config_destroy(&config);
 }
 
-UserAudioSettings GameConfig::getUserAudioSettings() {
-	return audioSettings;
-}
-
-UserGraphicsSettings GameConfig::getUserGraphicsSettings() {
-	return graphicsSettings;
-}
-
-UserWindowSettings GameConfig::getUserWindowSettings() {
-	return windowSettings;
-}
-
-bool GameConfig::setDefaultSettings() {
-	audioSettings.masterVolume = 1.0f;
+bool GameConfig::useDefaultSettings() {
+	audioSettings.masterVolume = 100;
 	config_setting_set_float(masterVolume, audioSettings.masterVolume);
 	graphicsSettings.vsync = true;
 	config_setting_set_bool(vsync, graphicsSettings.vsync);
@@ -53,6 +41,18 @@ bool GameConfig::setDefaultSettings() {
 	windowSettings.mode = WindowMode::Windowed;
 	config_setting_set_int(mode, static_cast<int>(windowSettings.mode));
 	return writeConfig();
+}
+
+UserAudioSettings GameConfig::getUserAudioSettings() {
+	return audioSettings;
+}
+
+UserGraphicsSettings GameConfig::getUserGraphicsSettings() {
+	return graphicsSettings;
+}
+
+UserWindowSettings GameConfig::getUserWindowSettings() {
+	return windowSettings;
 }
 
 bool GameConfig::setAudioMasterVolume(int masterVolume) {

@@ -4,7 +4,10 @@ GraphicsManager::GraphicsManager(UserGraphicsSettings settings, GLFWwindow* wind
 	if (!glfwVulkanSupported())
 		throw std::runtime_error("CRITICAL: Vulkan loader was not found!");
 
-	std::vector<vk::ExtensionProperties> extensionProperties = vk::enumerateInstanceExtensionProperties();
+	std::vector<vk::ExtensionProperties> extensionProperties;
+	auto extensionPropertiesResult = vk::enumerateInstanceExtensionProperties();
+	if (extensionPropertiesResult.result == vk::Result::eSuccess)
+		extensionProperties = extensionPropertiesResult.value;
 	bool surfaceKHRSupport = false, surfaceKHRWin32Support = false;
 	for (vk::ExtensionProperties extension : extensionProperties) {
 		if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME))
@@ -16,11 +19,14 @@ GraphicsManager::GraphicsManager(UserGraphicsSettings settings, GLFWwindow* wind
 	if (!surfaceKHRSupport || !surfaceKHRWin32Support)
 		throw std::runtime_error("CRITICAL: Vulkan driver does not support rendering to a surface!");
 
-	std::vector<vk::LayerProperties> layerProperties = vk::enumerateInstanceLayerProperties();
+	// We do not need to throw an exception if we cannot query layers.
+	std::vector<vk::LayerProperties> layerProperties;
+	auto layerPropertiesResult = vk::enumerateInstanceLayerProperties();
+	if (layerPropertiesResult.result == vk::Result::eSuccess)
+		layerProperties = layerPropertiesResult.value;
 
 	vk::ApplicationInfo appInfo;
-	appInfo.setApiVersion(VK_MAKE_VERSION(1, 0, 0));
-	appInfo.setPApplicationName("Engine");
+	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
 	std::vector<const char*> instanceExtensions;
 	std::vector<const char*> instanceLayers;
@@ -36,31 +42,37 @@ GraphicsManager::GraphicsManager(UserGraphicsSettings settings, GLFWwindow* wind
 	instanceExtensions.insert(instanceExtensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount);
 
 	vk::InstanceCreateInfo instanceInfo;
-	instanceInfo.setPApplicationInfo(&appInfo);
-	instanceInfo.setEnabledExtensionCount(static_cast<uint32_t>(instanceExtensions.size()));
-	instanceInfo.setPpEnabledExtensionNames(instanceExtensions.data());
-	instanceInfo.setEnabledLayerCount(static_cast<uint32_t>(instanceLayers.size()));
-	instanceInfo.setPpEnabledLayerNames(instanceLayers.data());
+	instanceInfo.pApplicationInfo = &appInfo;
+	instanceInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
+	instanceInfo.ppEnabledExtensionNames = instanceExtensions.data();
+	instanceInfo.enabledLayerCount = static_cast<uint32_t>(instanceLayers.size());
+	instanceInfo.ppEnabledLayerNames = instanceLayers.data();
 
-	try {
-		instance = vk::createInstanceUnique(instanceInfo);
-	}
-	catch (std::runtime_error e) {
-		throw std::runtime_error("CRITICAL: Driver support for Vulkan was not detected!");
-	}
-
+	auto instanceResult = vk::createInstance(instanceInfo);
+	if (instanceResult.result == vk::Result::eSuccess)
+		instance = instanceResult.value;
+	else
+		throw std::runtime_error("CRITICAL: A Vulkan driver was not detected!");
 
 	vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
-	surfaceCreateInfo.setHinstance(GetModuleHandle(nullptr));
-	surfaceCreateInfo.setHwnd(glfwGetWin32Window(window));
-	surface = instance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
+	surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+	surfaceCreateInfo.hwnd = glfwGetWin32Window(window);
+	auto surfaceResult = instance.createWin32SurfaceKHR(surfaceCreateInfo);
+	if (surfaceResult.result == vk::Result::eSuccess)
+		surface = surfaceResult.value;
+	else
+		throw std::runtime_error("CRITICAL: Could not create a Vulkan rendering surface!");
 
-	try {
-		physicalDevices = instance->enumeratePhysicalDevices();
-	}
-	catch (std::runtime_error e) {
+	auto physicalDevicesResult = instance.enumeratePhysicalDevices();
+	if (physicalDevicesResult.result == vk::Result::eSuccess)
+		physicalDevices = physicalDevicesResult.value;
+	else
 		throw std::runtime_error("CRITICAL: Could not detect a Vulkan supported hardware device!");
-	}
+}
+
+GraphicsManager::~GraphicsManager() {
+	instance.destroySurfaceKHR(surface);
+	instance.destroy();
 }
 
 std::vector<Renderer> GraphicsManager::getRenderers() {

@@ -5,8 +5,7 @@
 #include <GLFW/glfw3native.h>
 
 #define VK_USE_PLATFORM_WIN32_KHR
-//#define VULKAN_HPP_NO_EXCEPTIONS
-#define VULKAN_HPP_TYPESAFE_CONVERSION
+#define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 
 #include "GameConfig.hpp"
@@ -15,10 +14,11 @@
 class GraphicsManager {
 public:
 	GraphicsManager(UserGraphicsSettings settings, GLFWwindow* window);
+	~GraphicsManager();
 	std::vector<Renderer> getRenderers();
 private:
-	vk::UniqueInstance instance;
-	vk::UniqueSurfaceKHR surface;
+	vk::Instance instance;
+	vk::SurfaceKHR surface;
 	std::vector<vk::PhysicalDevice> physicalDevices;
 	UserGraphicsSettings settings;
 };
