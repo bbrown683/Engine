@@ -1,18 +1,13 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#include <libconfig.h>
 
 #define VK_USE_PLATFORM_WIN32_KHR
+#define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_TYPESAFE_CONVERSION
 #include <vulkan/vulkan.hpp>
 
 #include <iostream>
-
-#include "GameConfig.hpp"
-#include "AudioManager.hpp"
-#include "GraphicsManager.hpp"
-#include "WindowManager.hpp"
 
 enum class ErrorSource {
 	Glfw = -1,
@@ -23,48 +18,6 @@ int main(int argc, char** argv) {
 	std::vector<const char*> args;
 	args.insert(args.begin(), argv, argv + argc);
 
-	// CONFIG
-	// ============================================================================================
-	config_t config;
-	config_init(&config);
-	
-	// Check if there is a config file already.
-	// If not create a default one.
-	if (!config_read_file(&config, "settings.cfg")) {
-		config_set_tab_width(&config, 4);
-		config_setting_t* rootGroup = config_root_setting(&config);
-		config_setting_t* version = config_setting_add(rootGroup, "version", CONFIG_TYPE_ARRAY);
-		config_setting_set_int_elem(version, -1, 1);
-		config_setting_set_int_elem(version, -1, 0);
-		config_setting_set_int_elem(version, -1, 0);
-		config_setting_t* applicationGroup = config_setting_add(rootGroup, "application", CONFIG_TYPE_GROUP);
-		config_setting_t* windowGroup = config_setting_add(applicationGroup, "window", CONFIG_TYPE_GROUP);
-		config_setting_t* graphicsGroup = config_setting_add(applicationGroup, "graphics", CONFIG_TYPE_GROUP);
-		config_setting_t* audioGroup = config_setting_add(applicationGroup, "audio", CONFIG_TYPE_GROUP);
-
-		config_setting_t* x = config_setting_add(windowGroup, "x", CONFIG_TYPE_INT);
-		config_setting_set_int(x, 0);
-		config_setting_t* y = config_setting_add(windowGroup, "y", CONFIG_TYPE_INT);
-		config_setting_set_int(y, 0);
-		config_setting_t* width = config_setting_add(windowGroup, "width", CONFIG_TYPE_INT);
-		config_setting_set_int(width, 1024);
-		config_setting_t* height = config_setting_add(windowGroup, "height", CONFIG_TYPE_INT);
-		config_setting_set_int(height, 768);
-		config_setting_t* mode = config_setting_add(windowGroup, "mode", CONFIG_TYPE_INT);
-		config_setting_set_int(mode, static_cast<int>(WindowMode::Windowed));
-		config_setting_t* vsync = config_setting_add(graphicsGroup, "vsync", CONFIG_TYPE_BOOL);
-		config_setting_set_bool(vsync, true);
-		config_setting_t* textureQuality = config_setting_add(graphicsGroup, "textureQuality", CONFIG_TYPE_INT);
-		config_setting_set_int(textureQuality, static_cast<int>(Quality::Ultra));
-		config_setting_t* textureFilterQuality = config_setting_add(graphicsGroup, "textureFiltering", CONFIG_TYPE_INT);
-		config_setting_set_int(textureFilterQuality, static_cast<int>(TextureFiltering::Anisotropic16x));
-		config_setting_t* masterVolume = config_setting_add(audioGroup, "masterVolume", CONFIG_TYPE_FLOAT);
-		config_setting_set_float(masterVolume, 1.0f);
-		config_write_file(&config, "settings.cfg");
-	}
-	config_destroy(&config);
-	// ===============================================================================================
-
 	if (!glfwInit())
 		return static_cast<int>(ErrorSource::Glfw);
 
@@ -74,7 +27,10 @@ int main(int argc, char** argv) {
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
 
-	std::vector<vk::ExtensionProperties> extensionProperties = vk::enumerateInstanceExtensionProperties();
+	std::vector<vk::ExtensionProperties> extensionProperties;
+	auto extensionPropertiesResult = vk::enumerateInstanceExtensionProperties();
+	if (extensionPropertiesResult.result == vk::Result::eSuccess)
+		extensionProperties = extensionPropertiesResult.value;
 	bool surfaceKHRSupport = false, surfaceKHRWin32Support = false;
 	for (vk::ExtensionProperties extension : extensionProperties) {
 		if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME))
@@ -86,7 +42,12 @@ int main(int argc, char** argv) {
 	if (!surfaceKHRSupport || !surfaceKHRWin32Support)
 		return static_cast<int>(ErrorSource::Vulkan);
 
-	std::vector<vk::LayerProperties> layerProperties = vk::enumerateInstanceLayerProperties();
+	std::vector<vk::LayerProperties> layerProperties;
+	auto layerPropertiesResult = vk::enumerateInstanceLayerProperties();
+	if (layerPropertiesResult.result == vk::Result::eSuccess)
+		layerProperties = layerPropertiesResult.value;
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
 
 	vk::ApplicationInfo appInfo;
 	appInfo.setApiVersion(VK_MAKE_VERSION(1, 0, 0));
@@ -113,25 +74,38 @@ int main(int argc, char** argv) {
 	instanceInfo.setPpEnabledLayerNames(instanceLayers.data());
 
 	vk::UniqueInstance instance;
-	try {
-		instance = vk::createInstanceUnique(instanceInfo);
-	}
-	catch (std::runtime_error e) {
+	auto instanceResult = vk::createInstanceUnique(instanceInfo);
+	if (instanceResult.result == vk::Result::eSuccess)
+		instance.swap(instanceResult.value);
+	else
 		return static_cast<int>(ErrorSource::Vulkan);
-	}
 
 	vk::UniqueSurfaceKHR surface;
 	vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
 	surfaceCreateInfo.setHinstance(GetModuleHandle(nullptr));
 	surfaceCreateInfo.setHwnd(glfwGetWin32Window(window));
-	surface = instance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
+	auto surfaceResult = instance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
+	if (surfaceResult.result == vk::Result::eSuccess)
+		surface.swap(surfaceResult.value);
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
 
 	// TODO: Allow user to pick GPU via settings.
-	std::vector<vk::PhysicalDevice> physicalDevices = instance->enumeratePhysicalDevices();
-	vk::PhysicalDevice physicalDevice = physicalDevices.front();
+	std::vector<vk::PhysicalDevice> physicalDevices;
+	auto physicalDevicesResult = instance->enumeratePhysicalDevices();
+	if (physicalDevicesResult.result == vk::Result::eSuccess)
+		physicalDevices.swap(physicalDevicesResult.value);
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
 
-	std::vector<vk::ExtensionProperties> deviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-	
+	vk::PhysicalDevice physicalDevice = physicalDevices.front();
+	std::vector<vk::ExtensionProperties> deviceExtensions;
+	auto deviceExtensionsResult = physicalDevice.enumerateDeviceExtensionProperties();
+	if (deviceExtensionsResult.result == vk::Result::eSuccess)
+		deviceExtensions = deviceExtensionsResult.value;
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
+
 	// Check for VK_KHR_swapchain extension.
 	bool swapchainSupport = false;
 	for (vk::ExtensionProperties deviceExtension : deviceExtensions)
@@ -157,11 +131,29 @@ int main(int argc, char** argv) {
 			graphicsSupport.push_back(i);
 
 		// Check for surface support.
-		VkBool32 supportsSurface = physicalDevice.getSurfaceSupportKHR(i, surface.get());
+		VkBool32 supportsSurface = VK_TRUE;
+		auto surfaceSupportResult = physicalDevice.getSurfaceSupportKHR(i, surface.get());
+		if (surfaceSupportResult.result == vk::Result::eSuccess)
+			supportsSurface = surfaceSupportResult.value;
 		if (supportsSurface) {
-			surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface.get());
-			surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface.get());
-			surfacePresentModes = physicalDevice.getSurfacePresentModesKHR(surface.get());
+			auto surfaceCapabilitiesResult = physicalDevice.getSurfaceCapabilitiesKHR(surface.get());
+			if (surfaceCapabilitiesResult.result == vk::Result::eSuccess)
+				surfaceCapabilities = surfaceCapabilitiesResult.value;
+			else 
+				return static_cast<int>(ErrorSource::Vulkan);
+
+			auto surfaceFormatsResult = physicalDevice.getSurfaceFormatsKHR(surface.get());
+			if (surfaceFormatsResult.result == vk::Result::eSuccess)
+				surfaceFormats = surfaceFormatsResult.value;
+			else
+				return static_cast<int>(ErrorSource::Vulkan);
+
+			auto surfacePresentModesResult = physicalDevice.getSurfacePresentModesKHR(surface.get());
+			if (surfacePresentModesResult.result == vk::Result::eSuccess)
+				surfacePresentModes = surfacePresentModesResult.value;
+			else
+				return static_cast<int>(ErrorSource::Vulkan);
+
 			surfaceSupport.push_back(i);
 		}
 	}
@@ -183,20 +175,19 @@ int main(int argc, char** argv) {
 	enabledFeatures.setSamplerAnisotropy(true);
 
 	vk::DeviceCreateInfo deviceInfo;
-	deviceInfo.setEnabledLayerCount(0);
-	deviceInfo.setPpEnabledExtensionNames(enabledDeviceExtensions.data());
-	deviceInfo.setEnabledExtensionCount(static_cast<uint32_t>(enabledDeviceExtensions.size()));
-	deviceInfo.setPQueueCreateInfos(&deviceQueueInfos);
-	deviceInfo.setQueueCreateInfoCount(1);
-	deviceInfo.setPEnabledFeatures(&enabledFeatures);
+	deviceInfo.pEnabledFeatures = &enabledFeatures;
+	deviceInfo.enabledLayerCount = 0;
+	deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
+	deviceInfo.enabledExtensionCount = static_cast<uint32_t>(enabledDeviceExtensions.size());
+	deviceInfo.pQueueCreateInfos = &deviceQueueInfos;
+	deviceInfo.queueCreateInfoCount = 1;
 
 	vk::UniqueDevice device;	
-	try {
-		device = physicalDevice.createDeviceUnique(deviceInfo);
-	}
-	catch (std::runtime_error e) {
+	auto deviceResult = physicalDevice.createDeviceUnique(deviceInfo);
+	if (deviceResult.result == vk::Result::eSuccess)
+		device.swap(deviceResult.value);
+	else
 		return static_cast<int>(ErrorSource::Vulkan);
-	}
 
 	// Select present mode.
 	// Prefer to use Mailbox present mode if it exists.
@@ -235,37 +226,59 @@ int main(int argc, char** argv) {
 	swapchainInfo.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity);
 	swapchainInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-	vk::UniqueSwapchainKHR swapchain = device->createSwapchainKHRUnique(swapchainInfo);
+	vk::UniqueSwapchainKHR swapchain;
+	auto swapchainResult = device->createSwapchainKHRUnique(swapchainInfo);
+	if (swapchainResult.result == vk::Result::eSuccess)
+		swapchain.swap(swapchainResult.value);
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
 
 	vk::CommandPoolCreateInfo commandPoolInfo;
-	commandPoolInfo.setQueueFamilyIndex(0);
-	vk::UniqueCommandPool commandPool = device->createCommandPoolUnique(commandPoolInfo);
-	
-	vk::CommandBufferAllocateInfo allocateInfo;
-	allocateInfo.setCommandPool(commandPool.get());
-	allocateInfo.setCommandBufferCount(1);
-	allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
+	commandPoolInfo.queueFamilyIndex = 0;
 
-	auto commandBuffer = device->allocateCommandBuffersUnique(allocateInfo);
+	vk::UniqueCommandPool commandPool;
+	auto commandPoolResult = device->createCommandPoolUnique(commandPoolInfo);
+	if (commandPoolResult.result == vk::Result::eSuccess)
+		commandPool.swap(commandPoolResult.value);
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
+
+	vk::CommandBufferAllocateInfo allocateInfo;
+	allocateInfo.commandPool = commandPool.get();
+	allocateInfo.commandBufferCount = 1;
+	allocateInfo.level = vk::CommandBufferLevel::ePrimary;
+
+	std::vector<vk::UniqueCommandBuffer> commandBuffers;
+	auto commandBuffersResult = device->allocateCommandBuffersUnique(allocateInfo);
+	if (commandBuffersResult.result == vk::Result::eSuccess) {
+		commandBuffers.swap(commandBuffersResult.value);
+	}
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
 
 	vk::FenceCreateInfo fenceInfo;
-	vk::UniqueFence fence = device->createFenceUnique(fenceInfo);
+	vk::UniqueFence fence;
+	auto fenceResult = device->createFenceUnique(fenceInfo);
+	if (fenceResult.result == vk::Result::eSuccess)
+		fence.swap(fenceResult.value);
+	else
+		return static_cast<int>(ErrorSource::Vulkan);
 
 	vk::Viewport viewport;
-	viewport.setWidth(static_cast<float>(surfaceCapabilities.currentExtent.width));
-	viewport.setHeight(static_cast<float>(surfaceCapabilities.currentExtent.height));
-	viewport.setMinDepth(0.0f);
-	viewport.setMaxDepth(1.0f);
+	viewport.width = static_cast<float>(surfaceCapabilities.currentExtent.width);
+	viewport.height = static_cast<float>(surfaceCapabilities.currentExtent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
 
 	vk::CommandBufferBeginInfo beginInfo;
-	commandBuffer[0]->begin(beginInfo);
-	commandBuffer[0]->setViewport(0, viewport);
-	commandBuffer[0]->end();
+	commandBuffers[0]->begin(beginInfo);
+	commandBuffers[0]->setViewport(0, viewport);
+	commandBuffers[0]->end();
 
 	vk::Queue queue = device->getQueue(0, 0);
 	vk::SubmitInfo submitInfo;
-	submitInfo.setCommandBufferCount(1);
-	submitInfo.setPCommandBuffers(&commandBuffer[0].get());
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[0].get();
 	queue.submit(submitInfo, fence.get());
 
 	// Wait for command buffer to complete.

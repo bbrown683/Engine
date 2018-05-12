@@ -20,12 +20,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameConfig.cpp" />
+    <ClCompile Include="GraphicsManager.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AudioManager.hpp" />
     <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="GraphicsManager.hpp" />
+    <ClInclude Include="Renderer.hpp" />
+    <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="WindowManager.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
