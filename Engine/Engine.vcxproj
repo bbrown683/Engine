@@ -19,13 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DriverD3D.cpp" />
     <ClCompile Include="GameConfig.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="DriverVk.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DriverD3D.hpp" />
     <ClInclude Include="GameConfig.hpp" />
+    <ClInclude Include="IDriver.hpp" />
     <ClInclude Include="Renderer.hpp" />
+    <ClInclude Include="DriverVk.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

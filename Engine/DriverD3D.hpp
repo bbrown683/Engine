@@ -22,27 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <vector>
-#include <GLFW/glfw3.h>
+#pragma once
 
-#include "Renderer.hpp"
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <wrl/client.h>
+using namespace Microsoft::WRL;
 
-int main(int argc, char** argv) {
-	std::vector<const char*> args;
-	args.insert(args.begin(), argv, argv + argc);
+#include "IDriver.hpp"
 
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Hello", nullptr, nullptr);
+class DriverD3D : public IDriver {
+public:
+	DriverD3D(GLFWwindow* pWindow);
 
-	Renderer renderer;
-	if (!renderer.createRendererForWindow(window))
-		return -1;
-
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
-	return 0;
-}
+	// Inherited via IDriver
+	bool initialize() override;
+	std::vector<Gpu> getGpus() override;
+	bool selectGpu(uint8_t id) override;
+private:
+	ComPtr<ID3D12Debug2> m_pDebug;
+	ComPtr<ID3D12Device> m_pDevice;
+	ComPtr<IDXGIFactory5> m_pFactory;
+	std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
+	ComPtr<IDXGISwapChain4> m_pSwapchain;
+};

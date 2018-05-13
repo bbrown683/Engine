@@ -22,27 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <vector>
-#include <GLFW/glfw3.h>
+#pragma once
 
-#include "Renderer.hpp"
+#define VK_USE_PLATFORM_WIN32_KHR
+#define VULKAN_HPP_NO_EXCEPTIONS
+#include <vulkan/vulkan.hpp>
 
-int main(int argc, char** argv) {
-	std::vector<const char*> args;
-	args.insert(args.begin(), argv, argv + argc);
+#include "IDriver.hpp"
 
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Hello", nullptr, nullptr);
+class DriverVk : public IDriver {
+public:
+	DriverVk(GLFWwindow* pWindow);
 
-	Renderer renderer;
-	if (!renderer.createRendererForWindow(window))
-		return -1;
+	// Inherited via IDriver
+	bool initialize() override;
+	std::vector<Gpu> getGpus() override;
+	bool selectGpu(uint8_t id) override;
+private:
+	vk::UniqueInstance m_pInstance;
+	std::vector<vk::PhysicalDevice> m_PhysicalDevices;
+	vk::UniqueSurfaceKHR m_pSurface;
+	vk::UniqueDevice m_pDevice;
+	vk::UniqueSwapchainKHR m_pSwapchain;
 
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
-	return 0;
-}
+	bool anisotropy;
+	float maxAnisotropy;
+};

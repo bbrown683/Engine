@@ -4,9 +4,14 @@
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="GameConfig.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="DriverD3D.cpp" />
+    <ClCompile Include="DriverVk.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="Renderer.hpp" />
+    <ClInclude Include="IDriver.hpp" />
+    <ClInclude Include="DriverD3D.hpp" />
+    <ClInclude Include="DriverVk.hpp" />
   </ItemGroup>
 </Project>
