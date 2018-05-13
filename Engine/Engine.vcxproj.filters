@@ -3,16 +3,10 @@
   <ItemGroup>
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="GameConfig.cpp" />
-    <ClCompile Include="WindowManager.cpp" />
-    <ClCompile Include="GraphicsManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WindowManager.hpp" />
-    <ClInclude Include="GraphicsManager.hpp" />
-    <ClInclude Include="AudioManager.hpp" />
     <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="Renderer.hpp" />
-    <ClInclude Include="ThreadPool.hpp" />
   </ItemGroup>
 </Project>
