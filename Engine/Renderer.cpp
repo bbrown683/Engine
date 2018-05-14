@@ -27,17 +27,32 @@ SOFTWARE.
 
 #include <iostream>
 
+Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
+
 bool Renderer::createRendererForWindow(GLFWwindow* pWindow) {
+	// This entire function will be logged eventually.
+
 	if (!pWindow) {
 		std::cerr << "FATAL: GLFW window is not a valid pointer!\n";
 		return false;
 	}
-	pDriver = std::make_unique<DriverVk>(pWindow);
+	if (m_Driver == RendererDriver::eDirect3D) {
+		pDriver = std::make_unique<DriverD3D>(pWindow);
+		std::cout << "STATUS: Direct3D12 driver was selected...\n";
+	}
+	if (m_Driver == RendererDriver::eVulkan) {
+		pDriver = std::make_unique<DriverVk>(pWindow);
+		std::cout << "STATUS: Vulkan driver was selected...\n";
+	}
 	if (!pDriver->initialize()) {
 		std::cerr << "FATAL: Failed to initialize render driver!\n";
 		return false;
 	}
+	
 	auto gpus = pDriver->getGpus();
+	for (auto gpu : gpus)
+		std::cout << gpu.name << std::endl;
+
 	if (!pDriver->selectGpu(gpus.front().id)) {
 		std::cerr << "CRITICAL: Failed to select GPU for operation!\n";
 		return false;
@@ -45,3 +60,6 @@ bool Renderer::createRendererForWindow(GLFWwindow* pWindow) {
 	return true;
 }
 
+RendererDriver Renderer::getRendererDriver() {
+	return m_Driver;
+}

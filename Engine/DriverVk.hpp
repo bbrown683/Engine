@@ -28,15 +28,14 @@ SOFTWARE.
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 
-#include "IDriver.hpp"
+#include "AbstractDriver.hpp"
 
-class DriverVk : public IDriver {
+class DriverVk : public AbstractDriver {
 public:
 	DriverVk(GLFWwindow* pWindow);
 
 	// Inherited via IDriver
 	bool initialize() override;
-	std::vector<Gpu> getGpus() override;
 	bool selectGpu(uint8_t id) override;
 private:
 	vk::UniqueInstance m_pInstance;

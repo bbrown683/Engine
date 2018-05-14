@@ -10,8 +10,8 @@
   <ItemGroup>
     <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="Renderer.hpp" />
-    <ClInclude Include="IDriver.hpp" />
     <ClInclude Include="DriverD3D.hpp" />
     <ClInclude Include="DriverVk.hpp" />
+    <ClInclude Include="AbstractDriver.hpp" />
   </ItemGroup>
 </Project>

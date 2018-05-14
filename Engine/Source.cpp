@@ -31,11 +31,19 @@ int main(int argc, char** argv) {
 	std::vector<const char*> args;
 	args.insert(args.begin(), argv, argv + argc);
 
+	RendererDriver driver = RendererDriver::eAutodetect;
+	for (const char* arg : args) {
+		if (std::strcmp(arg, "--d3d") == 0)
+			driver = RendererDriver::eDirect3D;
+		if (std::strcmp(arg, "--vulkan") == 0)
+			driver = RendererDriver::eVulkan;
+	}
+
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(1024, 768, "Hello", nullptr, nullptr);
 
-	Renderer renderer;
+	Renderer renderer(driver);
 	if (!renderer.createRendererForWindow(window))
 		return -1;
 

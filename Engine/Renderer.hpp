@@ -26,8 +26,15 @@ SOFTWARE.
 
 #include <memory>
 
-#include "IDriver.hpp"
+#include "AbstractDriver.hpp"
+#include "DriverD3D.hpp"
 #include "DriverVk.hpp"
+
+enum class RendererDriver {
+	eAutodetect,
+	eDirect3D,
+	eVulkan,
+};
 
 enum class TextureFiltering {
 	Default,
@@ -41,17 +48,26 @@ enum class TextureFiltering {
 
 class Renderer {
 public:
+	explicit Renderer(RendererDriver driver);
+
 	/// This function initializes the renderer class for the given GLFW window.
 	/// This must be the first function called after creating the object. This 
 	/// call will return the status of whether the renderer was successfully created.
 	bool createRendererForWindow(GLFWwindow* pWindow);
-
+	
+	/// This function will return the renderer driver currently being used
+	/// by the renderer. This will not return eAutodetect, which will select either
+	/// eDirect3D12 or eVulkan, which are the only two possible return options from
+	/// this function.
+	RendererDriver getRendererDriver();
+	bool setRendererDriver(RendererDriver driver);
 	void setVsync(bool state);
 	bool getVsync();
 	void setTextureFiltering(TextureFiltering textureFiltering);
 	TextureFiltering getTextureFiltering();
 private:
-	std::unique_ptr<IDriver> pDriver;
+	std::unique_ptr<AbstractDriver> pDriver;
+	RendererDriver m_Driver;
 	bool vsync;
-	TextureFiltering textureFilter;
+	TextureFiltering textureFiltering;
 };

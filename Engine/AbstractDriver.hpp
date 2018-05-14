@@ -31,37 +31,40 @@ struct Gpu {
 	uint8_t id;
 	const char* name;
 	uint32_t memory;
-	bool physical;
+	bool software;
 };
 
 struct GLFWwindow;
 
-class IDriver {
+class AbstractDriver {
 public:
-	explicit IDriver(GLFWwindow* pWindow) : m_pWindow(pWindow) {}
-	
+	explicit AbstractDriver(GLFWwindow* pWindow) : m_pWindow(pWindow) {}
+	virtual ~AbstractDriver() {}
+
 	/// Initializes all of the driver specific state in order for it to properly function.
 	/// This should be the first function called after instantiating the driver object.
 	/// It will return true when the driver was successfully initialized, and false if it
 	/// encountered an error. Any error on this function should be treated as fatal and 
 	/// should cause the application to shutdown.
 	virtual bool initialize() = 0;
-	
-	/// Returns a list of all GPUs along with information about each one of them.
-	/// id - The identifier of this GPU.
-	/// name - The name of this GPU.
-	/// memory - The maximum amount of video memory for this GPU.
-	/// physical - A boolean of whether this GPU is a physical graphics card. 
-	/// If this is false it could be software emulated, onboard, etc and is a the preferred option.
-	virtual std::vector<Gpu> getGpus() = 0;
-	
+		
 	/// Selects the input GPU for operation. This function will return true if
 	/// the Gpu was successfully selected. If this returns false, it should be treated 
 	/// as a fatal error if it is the only available Gpu on the system. You can try another
 	/// Gpu and see if it succeeds otherwise.
 	virtual bool selectGpu(uint8_t id) = 0;
+
+	/// Returns a list of all GPUs along with information about each one of them.
+	/// id - The identifier of this GPU.
+	/// name - The name of this GPU.
+	/// memory - The maximum amount of video memory for this GPU.
+	/// physical - A boolean of whether this GPU is a software rasterizer and not a physical graphics card. 
+	std::vector<Gpu> getGpus() { return m_Gpus; };
+
 protected:
 	GLFWwindow* getWindow() { return m_pWindow; };
+	void addGpu(Gpu gpu) { m_Gpus.push_back(gpu); };
 private:
 	GLFWwindow* m_pWindow;
+	std::vector<Gpu> m_Gpus;
 };

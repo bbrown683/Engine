@@ -30,7 +30,7 @@ SOFTWARE.
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-DriverVk::DriverVk(GLFWwindow* pWindow) : IDriver(pWindow) {}
+DriverVk::DriverVk(GLFWwindow* pWindow) : AbstractDriver(pWindow) {}
 
 bool DriverVk::initialize() {
 	// GLFW can tell us if there is a vulkan loader.
@@ -70,7 +70,6 @@ bool DriverVk::initialize() {
 
 #ifdef _DEBUG
 	instanceExtensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-	//	instanceLayers.push_back("VK_LAYER_LUNARG_api_dump");
 	instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 #endif
 
@@ -112,24 +111,15 @@ bool DriverVk::initialize() {
 		std::cerr << "CRITICAL: Could not detect a Vulkan supported hardware device!\n";
 		return false;
 	}
-	return true;
-}
 
-std::vector<Gpu> DriverVk::getGpus() {
-	std::vector<Gpu> info;
 	uint8_t counter = 0;
 	for (vk::PhysicalDevice physicalDevice : m_PhysicalDevices) {
 		vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
-		bool physical = properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? true : false;
-		info.push_back(Gpu({
-			counter++,
-			properties.deviceName,
-			0,
-			physical
-			}
-		));
+		addGpu(Gpu { counter++, properties.deviceName, 0, 
+			properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false });
 	}
-	return info;
+
+	return true;
 }
 
 bool DriverVk::selectGpu(uint8_t id) {
