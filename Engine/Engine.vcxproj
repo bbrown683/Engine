@@ -19,18 +19,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DriverD3D.cpp" />
+    <ClCompile Include="DriverD3D12.cpp" />
+    <ClCompile Include="Font.cpp" />
     <ClCompile Include="GameConfig.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="RenderableMesh.cpp" />
+    <ClCompile Include="RenderableMeshVk.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RendererThreadPool.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="DriverVk.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DriverD3D.hpp" />
+    <ClInclude Include="DriverD3D12.hpp" />
     <ClInclude Include="GameConfig.hpp" />
-    <ClInclude Include="AbstractDriver.hpp" />
+    <ClInclude Include="Driver.hpp" />
+    <ClInclude Include="Font.hpp" />
+    <ClInclude Include="Image.hpp" />
+    <ClInclude Include="PBRMaterial.hpp" />
+    <ClInclude Include="Model.hpp" />
+    <ClInclude Include="RenderableMesh.hpp" />
+    <ClInclude Include="RenderableMeshVk.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
+    <ClInclude Include="RendererThreadPool.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

@@ -22,35 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#pragma once
+
 #include <vector>
-#include <GLFW/glfw3.h>
 
-#include "Renderer.hpp"
+#include "Image.hpp"
+#include "Model.hpp"
 
-int main(int argc, char** argv) {
-	std::vector<const char*> args;
-	args.insert(args.begin(), argv, argv + argc);
-
-	RendererDriver driver = RendererDriver::Autodetect;
-	for (const char* arg : args) {
-		if (std::strcmp(arg, "--d3d12") == 0)
-			driver = RendererDriver::Direct3D12;
-		if (std::strcmp(arg, "--vulkan") == 0)
-			driver = RendererDriver::Vulkan;
-	}
-
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
-
-	Renderer renderer(driver);
-	if (!renderer.createRendererForWindow(window))
-		return -1;
-
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
-	return 0;
-}
+class RenderableMesh {
+public:
+    RenderableMesh(const char* filename);
+    virtual ~RenderableMesh() {}
+    virtual void Render() = 0;
+protected:
+    Model & getModel() { return m_Model; };
+private:
+    Model m_Model;
+};

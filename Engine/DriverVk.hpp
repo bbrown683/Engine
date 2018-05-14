@@ -24,26 +24,32 @@ SOFTWARE.
 
 #pragma once
 
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #define VK_USE_PLATFORM_WIN32_KHR
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 
-#include "AbstractDriver.hpp"
+#include "Driver.hpp"
 
-class DriverVk : public AbstractDriver {
+class DriverVk : public Driver {
 public:
-	DriverVk(GLFWwindow* pWindow);
+    DriverVk(GLFWwindow* pWindow);
 
-	// Inherited via IDriver
-	bool initialize() override;
-	bool selectGpu(uint8_t id) override;
+    // Inherited via IDriver
+    bool initialize() override;
+    bool selectGpu(uint8_t id) override;
+    void beginFrame() override;
+    void endFrame() override;
 private:
-	vk::UniqueInstance m_pInstance;
-	std::vector<vk::PhysicalDevice> m_PhysicalDevices;
-	vk::UniqueSurfaceKHR m_pSurface;
-	vk::UniqueDevice m_pDevice;
-	vk::UniqueSwapchainKHR m_pSwapchain;
+    vk::UniqueInstance m_pInstance;
+    std::vector<vk::PhysicalDevice> m_PhysicalDevices;
+    vk::UniqueSurfaceKHR m_pSurface;
+    vk::UniqueDevice m_pDevice;
+    vk::UniqueSwapchainKHR m_pSwapchain;
 
-	bool anisotropy;
-	float maxAnisotropy;
+    bool anisotropy;
+    float maxAnisotropy;
 };

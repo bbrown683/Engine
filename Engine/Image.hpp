@@ -24,37 +24,22 @@ SOFTWARE.
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
+enum class ImageTransform {
+	Horizontal,
+	Vertical,
+};
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+struct FIBITMAP;
 
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <dxgidebug.h>
-#include <wrl/client.h>
-using namespace Microsoft::WRL;
-
-#include "AbstractDriver.hpp"
-
-class DriverD3D : public AbstractDriver {
+struct Image {
 public:
-	DriverD3D(GLFWwindow* pWindow);
-
-	// Inherited via IDriver
-	bool initialize() override;
-	bool selectGpu(uint8_t id) override;
+	~Image();
+	bool load(const char* filename);
+	unsigned int getWidth();
+	unsigned int getHeight();
+	unsigned int getPitch();
+	const unsigned char* getBits();
+	bool transform(ImageTransform transform);
 private:
-#ifdef _DEBUG
-	ComPtr<IDXGIDebug1> m_pCpuDebug;
-	ComPtr<ID3D12Debug1> m_pGpuDebug;
-#endif
-	ComPtr<ID3D12Device> m_pDevice;
-	ComPtr<ID3D12CommandQueue> m_pCommandQueue;
-	ComPtr<IDXGIFactory5> m_pFactory;
-	std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
-	ComPtr<IDXGISwapChain1> m_pSwapchain;
+	FIBITMAP* pBitmap;
 };

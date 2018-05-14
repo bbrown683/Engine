@@ -22,35 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <vector>
-#include <GLFW/glfw3.h>
+#pragma once
 
-#include "Renderer.hpp"
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
-int main(int argc, char** argv) {
-	std::vector<const char*> args;
-	args.insert(args.begin(), argv, argv + argc);
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
-	RendererDriver driver = RendererDriver::Autodetect;
-	for (const char* arg : args) {
-		if (std::strcmp(arg, "--d3d12") == 0)
-			driver = RendererDriver::Direct3D12;
-		if (std::strcmp(arg, "--vulkan") == 0)
-			driver = RendererDriver::Vulkan;
-	}
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <dxgidebug.h>
+#include <wrl/client.h>
+using namespace Microsoft::WRL;
 
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
+#include "Driver.hpp"
 
-	Renderer renderer(driver);
-	if (!renderer.createRendererForWindow(window))
-		return -1;
+class DriverD3D12 : public Driver {
+public:
+    DriverD3D12(GLFWwindow* pWindow);
 
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
-	return 0;
-}
+    // Inherited via IDriver
+    bool initialize() override;
+    bool selectGpu(uint8_t id) override;
+    void beginFrame() override;
+    void endFrame() override;
+private:
+#ifdef _DEBUG
+    ComPtr<IDXGIDebug1> m_pCpuDebug;
+    ComPtr<ID3D12Debug1> m_pGpuDebug;
+#endif
+    ComPtr<ID3D12Device> m_pDevice;
+    ComPtr<ID3D12CommandQueue> m_pCommandQueue;
+    ComPtr<IDXGIFactory5> m_pFactory;
+    std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
+    ComPtr<IDXGISwapChain1> m_pSwapchain;
+};

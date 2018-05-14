@@ -22,44 +22,64 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
 #include "Renderer.hpp"
+#include "DriverD3D12.hpp"
+#include "DriverVk.hpp"
 
 #include <iostream>
 
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
 bool Renderer::createRendererForWindow(GLFWwindow* pWindow) {
-	// This entire function will be logged eventually.
+    // This entire function will be logged eventually.
 
-	if (!pWindow) {
-		std::cerr << "FATAL: GLFW window is not a valid pointer!\n";
-		return false;
-	}
-	if (m_Driver == RendererDriver::eDirect3D) {
-		pDriver = std::make_unique<DriverD3D>(pWindow);
-		std::cout << "STATUS: Direct3D12 driver was selected...\n";
-	}
-	if (m_Driver == RendererDriver::eVulkan) {
-		pDriver = std::make_unique<DriverVk>(pWindow);
-		std::cout << "STATUS: Vulkan driver was selected...\n";
-	}
-	if (!pDriver->initialize()) {
-		std::cerr << "FATAL: Failed to initialize render driver!\n";
-		return false;
-	}
-	
-	auto gpus = pDriver->getGpus();
-	for (auto gpu : gpus)
-		std::cout << gpu.name << std::endl;
+    if (!pWindow) {
+        std::cerr << "FATAL: GLFW window is not a valid pointer!\n";
+        return false;
+    }
+    if (m_Driver == RendererDriver::Direct3D12) {
+        m_pDriver = std::make_unique<DriverD3D12>(pWindow);
+        std::cout << "STATUS: Direct3D12 driver was selected...\n";
+    }
+    if (m_Driver == RendererDriver::Vulkan) {
+        m_pDriver = std::make_unique<DriverVk>(pWindow);
+        std::cout << "STATUS: Vulkan driver was selected...\n";
+    }
+    if (!m_pDriver->initialize()) {
+        std::cerr << "FATAL: Failed to initialize render driver!\n";
+        return false;
+    }
 
-	if (!pDriver->selectGpu(gpus.front().id)) {
-		std::cerr << "CRITICAL: Failed to select GPU for operation!\n";
-		return false;
-	}
-	return true;
+    auto gpus = m_pDriver->getGpus();
+    for (auto gpu : gpus)
+        std::cout << gpu.name << std::endl;
+
+    if (!m_pDriver->selectGpu(gpus.front().id)) {
+        std::cerr << "CRITICAL: Failed to select GPU for operation!\n";
+        return false;
+    }
+    return true;
 }
 
 RendererDriver Renderer::getRendererDriver() {
-	return m_Driver;
+    return m_Driver;
+}
+
+bool Renderer::setRendererDriver(RendererDriver driver) {
+    if (driver != m_Driver) {
+        m_pDriver.reset();
+    }
+    return false;
+}
+
+bool Renderer::getVsync() {
+    return m_Vsync;
+}
+
+void Renderer::setTextureFiltering(TextureFiltering textureFiltering) {
+    m_TextureFiltering = textureFiltering;
+}
+
+TextureFiltering Renderer::getTextureFiltering() {
+    return m_TextureFiltering;
 }
