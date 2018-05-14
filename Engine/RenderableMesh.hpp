@@ -26,16 +26,13 @@ SOFTWARE.
 
 #include <vector>
 
-#include "Image.hpp"
 #include "Model.hpp"
 
 class RenderableMesh {
 public:
     RenderableMesh(const char* filename);
-    virtual ~RenderableMesh() {}
-    virtual void Render() = 0;
 protected:
-    Model & getModel() { return m_Model; };
+    Model& getModel() { return m_Model; };
 private:
     Model m_Model;
 };

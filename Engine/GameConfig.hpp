@@ -24,6 +24,8 @@ SOFTWARE.
 
 #pragma once
 
+/*
+
 #include <libconfig.h>
 
 struct UserAudioSettings {
@@ -102,3 +104,5 @@ private:
     UserGraphicsSettings graphicsSettings;
     UserWindowSettings windowSettings;
 };
+
+*/

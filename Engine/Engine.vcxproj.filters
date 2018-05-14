@@ -7,11 +7,13 @@
     <ClCompile Include="DriverVk.cpp" />
     <ClCompile Include="DriverD3D12.cpp" />
     <ClCompile Include="RenderableMesh.cpp" />
-    <ClCompile Include="Image.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Font.cpp" />
-    <ClCompile Include="RenderableMeshVk.cpp" />
     <ClCompile Include="RendererThreadPool.cpp" />
+    <ClCompile Include="Renderable.cpp" />
+    <ClCompile Include="RenderableVk.cpp" />
+    <ClCompile Include="RenderableD3D12.cpp" />
+    <ClCompile Include="RenderableSprite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameConfig.hpp" />
@@ -20,11 +22,13 @@
     <ClInclude Include="DriverD3D12.hpp" />
     <ClInclude Include="RenderableMesh.hpp" />
     <ClInclude Include="Font.hpp" />
-    <ClInclude Include="Image.hpp" />
     <ClInclude Include="Model.hpp" />
     <ClInclude Include="PBRMaterial.hpp" />
-    <ClInclude Include="RenderableMeshVk.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="RendererThreadPool.hpp" />
+    <ClInclude Include="Renderable.hpp" />
+    <ClInclude Include="RenderableVk.hpp" />
+    <ClInclude Include="RenderableD3D12.hpp" />
+    <ClInclude Include="RenderableSprite.hpp" />
   </ItemGroup>
 </Project>

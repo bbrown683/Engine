@@ -41,13 +41,17 @@ public:
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint8_t id) override;
-    void beginFrame() override;
-    void endFrame() override;
+    void submit() override;
+    std::unique_ptr<Renderable> createRenderable(bool once) override;
+
+    vk::UniqueDevice& getDevice();
+    vk::UniqueSwapchainKHR& getSwapchain();
 private:
     vk::UniqueInstance m_pInstance;
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;
     vk::UniqueSurfaceKHR m_pSurface;
     vk::UniqueDevice m_pDevice;
+    vk::UniqueFence m_pFence;
     vk::UniqueSwapchainKHR m_pSwapchain;
 
     bool anisotropy;

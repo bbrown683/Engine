@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include "DriverVk.hpp"
+#include "RenderableVk.hpp"
 
 #include <iostream>
 
@@ -87,10 +88,8 @@ bool DriverVk::initialize() {
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
     if (instanceResult.result == vk::Result::eSuccess)
         m_pInstance.swap(instanceResult.value);
-    else {
-        std::cerr << "CRITICAL: A Vulkan driver was not detected!\n";
+    else 
         return false;
-    }
 
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
     surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
@@ -99,18 +98,14 @@ bool DriverVk::initialize() {
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
     if (surfaceResult.result == vk::Result::eSuccess)
         m_pSurface.swap(surfaceResult.value);
-    else {
-        std::cerr << "CRITICAL: Could not create a Vulkan rendering surface!\n";
+    else
         return false;
-    }
 
     auto m_PhysicalDevicesResult = m_pInstance->enumeratePhysicalDevices();
     if (m_PhysicalDevicesResult.result == vk::Result::eSuccess)
         m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
-    else {
-        std::cerr << "CRITICAL: Could not detect a Vulkan supported hardware device!\n";
+    else
         return false;
-    }
 
     uint8_t counter = 0;
     for (vk::PhysicalDevice physicalDevice : m_PhysicalDevices) {
@@ -191,10 +186,8 @@ bool DriverVk::selectGpu(uint8_t id) {
     }
 
     // Graphics or Surface are not supported.
-    if (graphicsSupport.empty() || surfaceSupport.empty()) {
-        std::cerr << "CRITICAL: Hardware device does not support drawing or surface operations!\n";
+    if (graphicsSupport.empty() || surfaceSupport.empty())
         return false;
-    }
 
     float priority = 1.0f;
 
@@ -220,10 +213,8 @@ bool DriverVk::selectGpu(uint8_t id) {
     if (deviceResult.result == vk::Result::eSuccess) {
         // TODO: Reset device if its already been initialized previously.
         m_pDevice.swap(deviceResult.value);
-    } else {
-        std::cerr << "CRITICAL: Failed to create a rendering device!\n";
+    } else
         return false;
-    }
 
     // Select present mode.
     // Prefer to use Mailbox present mode if it exists.
@@ -266,13 +257,21 @@ bool DriverVk::selectGpu(uint8_t id) {
     if (swapchainResult.result == vk::Result::eSuccess) {
         // TODO: Reset swapchain if its already been initialized previously.
         m_pSwapchain.swap(swapchainResult.value);
-    } else {
-        throw std::runtime_error("CRITICAL: Failed to create a swapchain for rendering surface!");
+    } else
         return false;
-    }
     return true;
 }
 
-void DriverVk::beginFrame() {}
+void DriverVk::submit() {}
 
-void DriverVk::endFrame() {}
+std::unique_ptr<Renderable> DriverVk::createRenderable(bool once) {
+    return std::make_unique<RenderableVk>(this);
+}
+
+vk::UniqueDevice& DriverVk::getDevice() {
+    return m_pDevice;
+}
+
+vk::UniqueSwapchainKHR& DriverVk::getSwapchain() {
+    return m_pSwapchain;
+}

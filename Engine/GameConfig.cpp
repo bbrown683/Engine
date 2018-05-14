@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include "GameConfig.hpp"
 
+/*
+
 GameConfig::GameConfig() {
     config_init(&config);
     root = config_root_setting(&config);
@@ -138,3 +140,5 @@ bool GameConfig::writeConfig() {
         return true;
     return false;
 }
+
+*/

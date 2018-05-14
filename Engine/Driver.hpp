@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 struct Gpu {
@@ -35,7 +36,7 @@ struct Gpu {
 };
 
 struct GLFWwindow;
-
+class Renderable;
 class Driver {
 public:
     explicit Driver(GLFWwindow* pWindow) : m_pWindow(pWindow) {}
@@ -54,8 +55,16 @@ public:
     /// Gpu and see if it succeeds otherwise.
     virtual bool selectGpu(uint8_t id) = 0;
 
-    virtual void beginFrame() = 0;
-    virtual void endFrame() = 0;
+    /// Submits all of the gathered command buffers/lists to the GPU for execution.
+    /// This call will block until all GPU execution has completed.
+    virtual void submit() = 0;
+
+    /// Creates a renderable object which at runtime is dynamically filled
+    /// with rendering commands. After these commands are filled, it is
+    /// pushed into a buffer where it is ready to be submitted. With the
+    /// once flag set, this renderable will expire and will need to be 
+    /// recreated.
+    virtual std::unique_ptr<Renderable> createRenderable(bool once) = 0;
 
     /// Returns a list of all GPUs along with information about each one of them.
     /// id - The identifier of this GPU.

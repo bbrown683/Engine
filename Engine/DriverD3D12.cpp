@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include "DriverD3D12.hpp"
+#include "RenderableD3D12.hpp"
 
 #include <iostream>
 
@@ -91,6 +92,8 @@ bool DriverD3D12::selectGpu(uint8_t id) {
     return true;
 }
 
-void DriverD3D12::beginFrame() {}
+void DriverD3D12::submit() {}
 
-void DriverD3D12::endFrame() {}
+std::unique_ptr<Renderable> DriverD3D12::createRenderable(bool once) {
+    return std::make_unique<RenderableD3D12>(this);
+}
