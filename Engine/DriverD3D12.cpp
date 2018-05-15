@@ -80,7 +80,7 @@ bool DriverD3D12::selectGpu(uint8_t id) {
 
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
-    swapchainDesc.BufferCount = 2;
+    swapchainDesc.BufferCount = 3;
     swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -92,6 +92,13 @@ bool DriverD3D12::selectGpu(uint8_t id) {
     return true;
 }
 
+bool DriverD3D12::drawFrame() {
+    if (FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
+        return false;
+    m_pFence.Reset();
+    return true;
+}
+
 void DriverD3D12::submit() {
     // Wait for command queue to complete submission to GPU.
     m_pCommandQueue->Wait(m_pFence.Get(), UINT64_MAX);
@@ -100,3 +107,5 @@ void DriverD3D12::submit() {
 std::unique_ptr<Renderable> DriverD3D12::createRenderable(bool once) {
     return std::make_unique<RenderableD3D12>(this);
 }
+
+

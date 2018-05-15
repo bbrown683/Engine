@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include "Driver.hpp"
 #include "RendererThreadPool.hpp"
+#include "Scene.hpp"
 
 enum class RendererDriver {
     /// Renderer will select the driver to use.

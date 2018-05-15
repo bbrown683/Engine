@@ -8,6 +8,8 @@ enum class ShaderStage {
     Vertex,
 };
 
+/// This object contains most of the render-state associated with a single object.
+/// This can include shaders, vertex buffers, index buffers, etc.
 class Renderable {
 public:
     virtual ~Renderable() {}

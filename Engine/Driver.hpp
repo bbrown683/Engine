@@ -56,6 +56,10 @@ public:
     /// Gpu and see if it succeeds otherwise.
     virtual bool selectGpu(uint8_t id) = 0;
 
+
+    /// 
+    virtual bool drawFrame() = 0;
+
     /// Submits all of the gathered command buffers/lists to the GPU for execution.
     /// This call will block until all GPU execution has completed.
     virtual void submit() = 0;

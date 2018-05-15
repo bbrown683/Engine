@@ -30,5 +30,6 @@
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="RenderableD3D12.hpp" />
     <ClInclude Include="RenderableSprite.hpp" />
+    <ClInclude Include="Scene.hpp" />
   </ItemGroup>
 </Project>

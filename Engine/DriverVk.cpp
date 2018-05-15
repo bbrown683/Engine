@@ -188,13 +188,15 @@ bool DriverVk::selectGpu(uint8_t id) {
     // Graphics or Surface are not supported.
     if (graphicsSupport.empty() || surfaceSupport.empty())
         return false;
+    else {
+
+    }
 
     float priority = 1.0f;
-
-    vk::DeviceQueueCreateInfo deviceQueueInfos;
-    deviceQueueInfos.queueCount = 1;
-    deviceQueueInfos.queueFamilyIndex = 0;
-    deviceQueueInfos.pQueuePriorities = &priority;
+    vk::DeviceQueueCreateInfo deviceQueueInfo;
+    deviceQueueInfo.queueCount = 1;
+    deviceQueueInfo.queueFamilyIndex = queueFamilyIndex;
+    deviceQueueInfo.pQueuePriorities = &priority;
 
     std::vector<const char*> enabledDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
@@ -206,12 +208,13 @@ bool DriverVk::selectGpu(uint8_t id) {
     deviceInfo.enabledLayerCount = 0;
     deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
     deviceInfo.enabledExtensionCount = static_cast<uint32_t>(enabledDeviceExtensions.size());
-    deviceInfo.pQueueCreateInfos = &deviceQueueInfos;
+    deviceInfo.pQueueCreateInfos = &deviceQueueInfo;
     deviceInfo.queueCreateInfoCount = 1;
 
     auto deviceResult = m_PhysicalDevices[id].createDeviceUnique(deviceInfo);
     if (deviceResult.result == vk::Result::eSuccess) {
-        // TODO: Reset device if its already been initialized previously.
+        if (m_pDevice)
+            m_pDevice.reset();
         m_pDevice.swap(deviceResult.value);
     } else
         return false;
@@ -255,10 +258,34 @@ bool DriverVk::selectGpu(uint8_t id) {
 
     auto swapchainResult = m_pDevice->createSwapchainKHRUnique(swapchainInfo);
     if (swapchainResult.result == vk::Result::eSuccess) {
-        // TODO: Reset swapchain if its already been initialized previously.
+        if (m_pSwapchain)
+            m_pSwapchain.reset();
         m_pSwapchain.swap(swapchainResult.value);
     } else
         return false;
+    return true;
+}
+
+bool DriverVk::drawFrame() {
+    vk::FenceCreateInfo fenceInfo;
+    auto fenceResult = m_pDevice->createFenceUnique(fenceInfo);
+    if (fenceResult.result == vk::Result::eSuccess)
+        m_pFence.swap(fenceResult.value);
+    else
+        return false;
+
+    // Grab a queue related to our device.
+    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, queueIndex);
+    // We are only submitting  the primary command list.
+    vk::SubmitInfo submitInfo;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &m_pPrimaryCommandBuffer.get();
+    queue.submit(submitInfo, m_pFence.get());
+
+    vk::PresentInfoKHR presentInfo;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &m_pSwapchain.get();
+    queue.presentKHR(presentInfo);
     return true;
 }
 

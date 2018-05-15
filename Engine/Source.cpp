@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Engine", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(1024, 768, "Ivy3", nullptr, nullptr);
 
 	Renderer renderer(driver);
 	if (!renderer.createRendererForWindow(window))

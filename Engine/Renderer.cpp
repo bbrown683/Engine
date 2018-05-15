@@ -40,11 +40,12 @@ bool Renderer::createRendererForWindow(GLFWwindow* pWindow) {
     if (m_Driver == RendererDriver::Direct3D12) {
         m_pDriver = std::make_unique<DriverD3D12>(pWindow);
         std::cout << "STATUS: Direct3D12 driver was selected...\n";
-    }
-    if (m_Driver == RendererDriver::Vulkan) {
+    } else if (m_Driver == RendererDriver::Vulkan) {
         m_pDriver = std::make_unique<DriverVk>(pWindow);
         std::cout << "STATUS: Vulkan driver was selected...\n";
-    }
+    } else
+        return false;
+
     if (!m_pDriver->initialize()) {
         std::cerr << "FATAL: Failed to initialize render driver!\n";
         return false;

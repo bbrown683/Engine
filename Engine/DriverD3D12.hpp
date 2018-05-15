@@ -47,8 +47,10 @@ public:
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint8_t id) override;
+    bool drawFrame() override;
     void submit() override;
     std::unique_ptr<Renderable> createRenderable(bool once) override;
+
 private:
 #ifdef _DEBUG
     ComPtr<IDXGIDebug1> m_pCpuDebug;
@@ -56,9 +58,10 @@ private:
 #endif
     ComPtr<ID3D12Device> m_pDevice;
     ComPtr<ID3D12CommandQueue> m_pCommandQueue;
-    std::vector<ComPtr<ID3D12GraphicsCommandList>> m_pCommandLists;
+    ComPtr<ID3D12CommandList> m_pPrimaryCommandList;
     ComPtr<ID3D12Fence> m_pFence;
     ComPtr<IDXGIFactory5> m_pFactory;
     std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
     ComPtr<IDXGISwapChain1> m_pSwapchain;
+    ComPtr<ID3D12RootSignature> m_pRootSignature;
 };

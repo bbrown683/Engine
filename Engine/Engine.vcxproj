@@ -48,6 +48,7 @@
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
     <ClInclude Include="RendererThreadPool.hpp" />
+    <ClInclude Include="Scene.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
