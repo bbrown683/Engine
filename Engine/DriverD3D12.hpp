@@ -56,6 +56,7 @@ private:
 #endif
     ComPtr<ID3D12Device> m_pDevice;
     ComPtr<ID3D12CommandQueue> m_pCommandQueue;
+    std::vector<ComPtr<ID3D12GraphicsCommandList>> m_pCommandLists;
     ComPtr<ID3D12Fence> m_pFence;
     ComPtr<IDXGIFactory5> m_pFactory;
     std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;

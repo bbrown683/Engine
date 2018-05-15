@@ -24,9 +24,6 @@ SOFTWARE.
 
 #pragma once
 
-#include <ft2build.h>
-#include <freetype/freetype.h>
-
 class Font {
     bool load(const char* filename);
 };

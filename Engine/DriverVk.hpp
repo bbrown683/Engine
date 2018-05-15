@@ -51,9 +51,9 @@ private:
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;
     vk::UniqueSurfaceKHR m_pSurface;
     vk::UniqueDevice m_pDevice;
-    vk::UniqueFence m_pFence;
+    std::vector<vk::UniqueFence> m_pFence;
     vk::UniqueSwapchainKHR m_pSwapchain;
-
+    vk::UniqueCommandBuffer m_pPrimaryCommandBuffer;
     bool anisotropy;
     float maxAnisotropy;
 };

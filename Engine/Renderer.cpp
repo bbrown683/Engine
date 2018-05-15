@@ -54,7 +54,7 @@ bool Renderer::createRendererForWindow(GLFWwindow* pWindow) {
     for (auto gpu : gpus)
         std::cout << gpu.name << std::endl;
 
-    if (!m_pDriver->selectGpu(gpus.front().id)) {
+    if (!m_pDriver->selectGpu(gpus.back().id)) {
         std::cerr << "CRITICAL: Failed to select GPU for operation!\n";
         return false;
     }

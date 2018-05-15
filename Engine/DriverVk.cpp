@@ -262,7 +262,9 @@ bool DriverVk::selectGpu(uint8_t id) {
     return true;
 }
 
-void DriverVk::submit() {}
+void DriverVk::submit() {
+
+}
 
 std::unique_ptr<Renderable> DriverVk::createRenderable(bool once) {
     return std::make_unique<RenderableVk>(this);

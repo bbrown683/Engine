@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include <cstdint>
 #include <memory>
+#include <thread>
 #include <vector>
 
 struct Gpu {
@@ -39,7 +40,7 @@ struct GLFWwindow;
 class Renderable;
 class Driver {
 public:
-    explicit Driver(GLFWwindow* pWindow) : m_pWindow(pWindow) {}
+    explicit Driver(GLFWwindow* pWindow) : m_pWindow(pWindow) { m_ThreadCount = std::thread::hardware_concurrency(); }
     virtual ~Driver() {}
 
     /// Initializes all of the driver specific state in order for it to properly function.
@@ -73,9 +74,11 @@ public:
     /// software - A boolean of whether this GPU is a software rasterizer and not a physical graphics card. 
     std::vector<Gpu> getGpus() { return m_Gpus; };
 protected:
-    GLFWwindow * getWindow() const { return m_pWindow; };
+    GLFWwindow* getWindow() const { return m_pWindow; };
     void addGpu(Gpu gpu) { m_Gpus.push_back(gpu); };
+    uint32_t getThreadCount() { return m_ThreadCount; };
 private:
-    GLFWwindow * m_pWindow;
+    GLFWwindow* m_pWindow;
     std::vector<Gpu> m_Gpus;
+    uint32_t m_ThreadCount;
 };

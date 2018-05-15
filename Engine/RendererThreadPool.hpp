@@ -4,7 +4,7 @@
 
 class RendererThreadPool {
 public:
-
+    RendererThreadPool();
 private:
 
 };
