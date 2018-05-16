@@ -32,6 +32,8 @@ SOFTWARE.
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include <d3d12.h>
@@ -53,6 +55,7 @@ public:
     std::unique_ptr<Renderable> createRenderable() override;
     const ComPtr<ID3D12Device>& getDevice() const;
     const ComPtr<ID3D12CommandList> getPrimaryCommandList() const;
+    const ComPtr<ID3DBlob>& getBlobFromCache(const char* pFilename);
 private:
 #ifdef _DEBUG
     ComPtr<IDXGIDebug1> m_pCpuDebug;
@@ -68,4 +71,5 @@ private:
     std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
     ComPtr<IDXGISwapChain1> m_pSwapchain;
     ComPtr<ID3D12RootSignature> m_pRootSignature;
+    std::unordered_map<const char*, ComPtr<ID3DBlob>> m_pBlobCache;
 };

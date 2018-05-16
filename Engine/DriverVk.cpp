@@ -58,7 +58,6 @@ bool DriverVk::initialize() {
         return false;
     }
 
-    // We do not need to throw an exception if we cannot query layers.
     std::vector<vk::LayerProperties> layerProperties;
     auto layerPropertiesResult = vk::enumerateInstanceLayerProperties();
     if (layerPropertiesResult.result == vk::Result::eSuccess)
@@ -87,7 +86,7 @@ bool DriverVk::initialize() {
     instanceInfo.ppEnabledLayerNames = instanceLayers.data();
 
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
-    if (instanceResult.result == vk::Result::eSuccess)
+    if (instanceResult.result != vk::Result::eSuccess)
         return false;
     m_pInstance.swap(instanceResult.value);
 
@@ -96,7 +95,7 @@ bool DriverVk::initialize() {
     surfaceCreateInfo.hwnd = glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow()));
 
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
-    if (surfaceResult.result == vk::Result::eSuccess)
+    if (surfaceResult.result != vk::Result::eSuccess)
         return false;
     m_pSurface.swap(surfaceResult.value);
 
@@ -116,7 +115,6 @@ bool DriverVk::initialize() {
         properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false;
         addGpu(gpu);
     }
-
     return true;
 }
 
@@ -156,7 +154,7 @@ bool DriverVk::selectGpu(uint32_t id) {
     std::vector<uint32_t> graphicsSupport;
     std::vector<uint32_t> surfaceSupport;
 
-    for (size_t i = 0; i < queueFamilies.size(); i++) {
+    for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilies.size()); i++) {
         // Only graphics queues should be checked.
         if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
             graphicsSupport.push_back(i);
@@ -305,4 +303,8 @@ const vk::UniqueCommandBuffer& DriverVk::getPrimaryCommandBuffer() const {
 
 const vk::UniqueSwapchainKHR& DriverVk::getSwapchain() const {
     return m_pSwapchain;
+}
+
+const vk::UniqueShaderModule& DriverVk::getModuleFromCache(const char* pFilename) const {
+    return m_pModuleCache[pFilename];
 }

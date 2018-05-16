@@ -29,10 +29,6 @@ SOFTWARE.
 Driver::Driver(const GLFWwindow* pWindow) : m_pWindow(pWindow) {
     m_ThreadCount = std::thread::hardware_concurrency();
     m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
-
-    // Testing threadpool.
-    for(int i = 0; i < 100; i++)
-        m_ThreadPool->enqueue([i] {std::cout << "Hello ThreadPool #" << i << std::endl; });
 }
 
 const std::vector<Gpu>& Driver::getGpus() {

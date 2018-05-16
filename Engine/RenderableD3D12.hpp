@@ -53,4 +53,5 @@ public:
 private:
     DriverD3D12* m_pDriver;
     ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
+    std::vector<ComPtr<ID3DBlob>> m_pBlobs;
 };

@@ -124,3 +124,7 @@ const ComPtr<ID3D12Device>& DriverD3D12::getDevice() const {
 const ComPtr<ID3D12CommandList> DriverD3D12::getPrimaryCommandList() const {
     return m_pPrimaryCommandList;
 }
+
+const ComPtr<ID3DBlob>& DriverD3D12::getBlobFromCache(const char* pFilename) {
+    return m_pBlobCache[pFilename];
+}

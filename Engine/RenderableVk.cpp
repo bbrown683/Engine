@@ -23,13 +23,16 @@ SOFTWARE.
 */
 
 #include "RenderableVk.hpp"
+
 #include "DriverVk.hpp"
 #include "System.hpp"
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
-    auto file = System::readFile(pFilename);
+    const char* pModuleName = std::strcat(const_cast<char*>(pFilename), ".spv");
+    auto module = m_pDriver->getModuleFromCache(pModuleName))
+    auto file = System::readFile(pModuleName);
     vk::ShaderModuleCreateInfo moduleInfo;
     moduleInfo.pCode = reinterpret_cast<const uint32_t*>(file.first);
     moduleInfo.codeSize = file.second;

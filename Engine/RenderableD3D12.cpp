@@ -28,6 +28,7 @@ SOFTWARE.
 RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
+    const char* pBlobName = std::strcat(const_cast<char*>(pFilename), ".cso");
     const char* target;
     switch (stage) {
     case ShaderStage::Fragment: target = "ps_5_0"; break;
@@ -36,8 +37,16 @@ bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
     case ShaderStage::TesselationEvaluation: target = "ds_5_0"; break;
     case ShaderStage::Vertex: target = "vs_5_0"; break;
     }
-
-    return false;
+    wchar_t pBlobNameWide[64];
+    size_t length = std::mbstowcs(pBlobNameWide, pBlobName, 64);
+    if (length != -1)
+        pBlobNameWide[length] = '\0';
+    
+    ID3DBlob* pBlob;
+    if (FAILED(D3DReadFileToBlob(pBlobNameWide, &pBlob)))
+        return false;
+    m_pBlobs.push_back(std::move(pBlob));
+    return true;
 }
 
 bool RenderableD3D12::execute() {

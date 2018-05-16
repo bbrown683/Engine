@@ -28,6 +28,10 @@ SOFTWARE.
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
 #include <glm/common.hpp>
 
 #define VK_USE_PLATFORM_WIN32_KHR

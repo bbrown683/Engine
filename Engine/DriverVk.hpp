@@ -28,6 +28,10 @@ SOFTWARE.
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <memory>
+#include <unordered_map>
+#include <vector>
+
 #define VK_USE_PLATFORM_WIN32_KHR
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
@@ -46,6 +50,7 @@ public:
     const vk::UniqueDevice& getDevice() const;
     const vk::UniqueCommandBuffer& getPrimaryCommandBuffer() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;
+    const vk::UniqueShaderModule& getModuleFromCache(const char* pFilename) const;
 private:
     vk::UniqueInstance m_pInstance;
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;
@@ -55,6 +60,7 @@ private:
     vk::UniqueSwapchainKHR m_pSwapchain;
     vk::UniqueCommandBuffer m_pPrimaryCommandBuffer;
     std::vector<vk::UniqueCommandPool> m_pCommandPool;
+    std::unordered_map<const char*, vk::UniqueShaderModule> m_pModuleCache;
 
     uint32_t queueFamilyIndex;
     uint32_t queueIndex;
