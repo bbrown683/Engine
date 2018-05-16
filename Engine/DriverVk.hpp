@@ -36,13 +36,12 @@ SOFTWARE.
 
 class DriverVk : public Driver {
 public:
-    DriverVk(GLFWwindow* pWindow);
+    DriverVk(const GLFWwindow* pWindow);
 
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint8_t id) override;
-    bool drawFrame() override;
-    void submit() override;
+    bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable(bool once) override;
 
     vk::UniqueDevice& getDevice();

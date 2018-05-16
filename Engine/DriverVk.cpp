@@ -31,7 +31,7 @@ SOFTWARE.
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-DriverVk::DriverVk(GLFWwindow* pWindow) : Driver(pWindow) {}
+DriverVk::DriverVk(const GLFWwindow* pWindow) : Driver(pWindow) {}
 
 bool DriverVk::initialize() {
     // GLFW can tell us if there is a vulkan loader.
@@ -93,7 +93,7 @@ bool DriverVk::initialize() {
 
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
     surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
-    surfaceCreateInfo.hwnd = glfwGetWin32Window(getWindow());
+    surfaceCreateInfo.hwnd = glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow()));
 
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
     if (surfaceResult.result == vk::Result::eSuccess)
@@ -266,31 +266,29 @@ bool DriverVk::selectGpu(uint8_t id) {
     return true;
 }
 
-bool DriverVk::drawFrame() {
+bool DriverVk::presentFrame() {
     vk::FenceCreateInfo fenceInfo;
     auto fenceResult = m_pDevice->createFenceUnique(fenceInfo);
     if (fenceResult.result == vk::Result::eSuccess)
         m_pFence.swap(fenceResult.value);
     else
         return false;
-
     // Grab a queue related to our device.
     vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, queueIndex);
+    
     // We are only submitting  the primary command list.
     vk::SubmitInfo submitInfo;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_pPrimaryCommandBuffer.get();
     queue.submit(submitInfo, m_pFence.get());
 
+    m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
+
     vk::PresentInfoKHR presentInfo;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_pSwapchain.get();
     queue.presentKHR(presentInfo);
     return true;
-}
-
-void DriverVk::submit() {
-
 }
 
 std::unique_ptr<Renderable> DriverVk::createRenderable(bool once) {

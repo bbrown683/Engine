@@ -29,6 +29,8 @@ SOFTWARE.
 #include <thread>
 #include <vector>
 
+#include "ThreadPool.hpp"
+
 struct Gpu {
     uint8_t id;
     char name[256];
@@ -40,7 +42,7 @@ struct GLFWwindow;
 class Renderable;
 class Driver {
 public:
-    explicit Driver(GLFWwindow* pWindow) : m_pWindow(pWindow) { m_ThreadCount = std::thread::hardware_concurrency(); }
+    explicit Driver(const GLFWwindow* pWindow);
     virtual ~Driver() {}
 
     /// Initializes all of the driver specific state in order for it to properly function.
@@ -56,13 +58,10 @@ public:
     /// Gpu and see if it succeeds otherwise.
     virtual bool selectGpu(uint8_t id) = 0;
 
-
-    /// 
-    virtual bool drawFrame() = 0;
-
     /// Submits all of the gathered command buffers/lists to the GPU for execution.
-    /// This call will block until all GPU execution has completed.
-    virtual void submit() = 0;
+    /// This call will block until all GPU execution has completed. Will present
+    /// all information executed in the queue to the swapchain for presentation.
+    virtual bool presentFrame() = 0;
 
     /// Creates a renderable object which at runtime is dynamically filled
     /// with rendering commands. After these commands are filled, it is
@@ -76,13 +75,15 @@ public:
     /// name - The name of this GPU.
     /// memory - The maximum amount of video memory for this GPU.
     /// software - A boolean of whether this GPU is a software rasterizer and not a physical graphics card. 
-    std::vector<Gpu> getGpus() { return m_Gpus; };
+    std::vector<Gpu> getGpus();
 protected:
-    GLFWwindow* getWindow() const { return m_pWindow; };
-    void addGpu(Gpu gpu) { m_Gpus.push_back(gpu); };
-    uint32_t getThreadCount() { return m_ThreadCount; };
+    const GLFWwindow* getWindow();
+    void addGpu(Gpu gpu);
+    uint32_t getThreadCount() const;
+    ThreadPool* getThreadPool();
 private:
-    GLFWwindow* m_pWindow;
+    const GLFWwindow* m_pWindow;
     std::vector<Gpu> m_Gpus;
     uint32_t m_ThreadCount;
+    std::unique_ptr<ThreadPool> m_ThreadPool;
 };

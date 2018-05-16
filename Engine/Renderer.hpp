@@ -27,7 +27,6 @@ SOFTWARE.
 #include <memory>
 
 #include "Driver.hpp"
-#include "RendererThreadPool.hpp"
 #include "Scene.hpp"
 
 enum class RendererDriver {
@@ -59,7 +58,9 @@ public:
     /// This function initializes the renderer class for the given GLFW window.
     /// This must be the first function called after creating the object. This 
     /// call will return the status of whether the renderer was successfully created.
-    bool createRendererForWindow(GLFWwindow* pWindow);
+    bool createRendererForWindow(const GLFWwindow* pWindow);
+
+    bool drawScene(Scene* scene);
 
     /// This function will return the renderer driver currently being used
     /// by the renderer. This will not return Autodetect, which will select either
@@ -72,18 +73,18 @@ public:
     /// new driver.
     bool setRendererDriver(RendererDriver driver);
 
+    /// Returns the current state of Vsync for the renderer. 
+    bool getVsync();
+
     /// Sets the current state of Vsync for the renderer. This can be in the form of either
     /// double or triple buffering depending on the backend driver implementation.
     void setVsync(bool state);
 
-    /// Returns the current state of Vsync for the renderer. 
-    bool getVsync();
+    /// Returns the currently applied texture filtering for the renderer.
+    TextureFiltering getTextureFiltering();
 
     /// 
     void setTextureFiltering(TextureFiltering textureFiltering);
-
-    /// Returns the currently applied texture filtering for the renderer.
-    TextureFiltering getTextureFiltering();
 private:
     std::unique_ptr<Driver> m_pDriver;
     RendererDriver m_Driver;

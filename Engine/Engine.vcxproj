@@ -19,19 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Driver.cpp" />
     <ClCompile Include="DriverD3D12.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="GameConfig.cpp" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="RenderableD3D12.cpp" />
     <ClCompile Include="RenderableMesh.cpp" />
     <ClCompile Include="RenderableSprite.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="RendererThreadPool.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="DriverVk.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DriverD3D12.hpp" />
@@ -47,7 +47,7 @@
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
-    <ClInclude Include="RendererThreadPool.hpp" />
+    <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="Scene.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -30,7 +30,7 @@ SOFTWARE.
 
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
-bool Renderer::createRendererForWindow(GLFWwindow* pWindow) {
+bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
     // This entire function will be logged eventually.
 
     if (!pWindow) {

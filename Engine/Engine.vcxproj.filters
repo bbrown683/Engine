@@ -9,11 +9,11 @@
     <ClCompile Include="RenderableMesh.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="Font.cpp" />
-    <ClCompile Include="RendererThreadPool.cpp" />
-    <ClCompile Include="Renderable.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="RenderableD3D12.cpp" />
     <ClCompile Include="RenderableSprite.cpp" />
+    <ClCompile Include="Driver.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameConfig.hpp" />
@@ -25,11 +25,11 @@
     <ClInclude Include="Model.hpp" />
     <ClInclude Include="PBRMaterial.hpp" />
     <ClInclude Include="Driver.hpp" />
-    <ClInclude Include="RendererThreadPool.hpp" />
     <ClInclude Include="Renderable.hpp" />
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="RenderableD3D12.hpp" />
     <ClInclude Include="RenderableSprite.hpp" />
     <ClInclude Include="Scene.hpp" />
+    <ClInclude Include="ThreadPool.hpp" />
   </ItemGroup>
 </Project>

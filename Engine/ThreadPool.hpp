@@ -22,4 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "RenderableMesh.hpp"
+#pragma once
+
+#include <condition_variable>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <vector>
+
+class ThreadPool {
+public:
+    /// Spawns threadCount threads and has them execute in parallel, waiting until a task 
+    /// is added to the queue a thread will pick up this task and execute it.
+    ThreadPool(uint32_t threadCount);
+
+    /// Ends the threadpool, returning all spawned threads.
+    ~ThreadPool();
+
+    /// Adds a funciton to the queue, where a thread will pick up the task and execute it.
+    void enqueue(std::function<void()> function);
+
+    /// Blocks execution on the calling thread until all spawned threads have returned.
+    void wait();
+private:
+    std::vector<std::thread> m_Threads;
+    std::queue<std::function<void()>> m_Queue;
+    std::mutex m_Mutex;
+    std::condition_variable m_Condition;
+    bool m_Complete;
+};

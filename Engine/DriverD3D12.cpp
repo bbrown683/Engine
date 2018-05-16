@@ -31,9 +31,10 @@ SOFTWARE.
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-DriverD3D12::DriverD3D12(GLFWwindow* pWindow) : Driver(pWindow) {}
+DriverD3D12::DriverD3D12(const GLFWwindow* pWindow) : Driver(pWindow) {}
 
 bool DriverD3D12::initialize() {
+    // Enable debug layer for D3D12 and DXGI.
 #ifdef _DEBUG
     if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pCpuDebug))))
         return false;
@@ -45,9 +46,12 @@ bool DriverD3D12::initialize() {
     m_pGpuDebug->EnableDebugLayer();
     m_pGpuDebug->SetEnableGPUBasedValidation(true);
 #endif
+    // Create the factory which will be used for our swapchain later.
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))))
         return false;
 
+    // Enumerate each GPU or software rasterizer found on the system.
+    // These will be used to select a GPU to render with.
     IDXGIAdapter1* pAdapter;
     for (UINT i = 0; m_pFactory->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; i++) {
         DXGI_ADAPTER_DESC1 adapterDesc;
@@ -71,9 +75,11 @@ bool DriverD3D12::selectGpu(uint8_t id) {
     if (id >= m_pAdapters.size())
         return false;
 
+    // Create the device which is attached to the GPU.
     if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice))))
         return false;
 
+    // Create a queue for passing our command lists to.
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
     if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue))))
         return false;
@@ -86,26 +92,27 @@ bool DriverD3D12::selectGpu(uint8_t id) {
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapchainDesc.SampleDesc.Count = 1;
 
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), glfwGetWin32Window(getWindow()),
+    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow())),
         &swapchainDesc, nullptr, nullptr, m_pSwapchain.GetAddressOf())))
         return false;
     return true;
 }
 
-bool DriverD3D12::drawFrame() {
+bool DriverD3D12::presentFrame() {
     if (FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
+        return false;
+
+    // Execute the primary command list.
+    m_pCommandQueue->ExecuteCommandLists(1, &m_pPrimaryCommandList);
+ 
+    // Wait for command queue to complete submission to GPU.
+    m_pCommandQueue->Wait(m_pFence.Get(), UINT64_MAX);
+    if (FAILED(m_pSwapchain->Present1(1, 0, nullptr)))
         return false;
     m_pFence.Reset();
     return true;
 }
 
-void DriverD3D12::submit() {
-    // Wait for command queue to complete submission to GPU.
-    m_pCommandQueue->Wait(m_pFence.Get(), UINT64_MAX);
-}
-
 std::unique_ptr<Renderable> DriverD3D12::createRenderable(bool once) {
     return std::make_unique<RenderableD3D12>(this);
 }
-
-

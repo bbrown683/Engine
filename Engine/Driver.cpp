@@ -22,4 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "RenderableMesh.hpp"
+#include "Driver.hpp"
+
+Driver::Driver(const GLFWwindow* pWindow) : m_pWindow(pWindow) {
+    m_ThreadCount = std::thread::hardware_concurrency();
+    m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
+}
+
+std::vector<Gpu> Driver::getGpus() {
+    return m_Gpus;
+}
+
+const GLFWwindow* Driver::getWindow() {
+    return m_pWindow;
+}
+
+void Driver::addGpu(Gpu gpu) {
+    m_Gpus.push_back(gpu);
+}
+
+uint32_t Driver::getThreadCount() const {
+    return m_ThreadCount;
+}
+
+ThreadPool* Driver::getThreadPool() {
+    return m_ThreadPool.get();
+}
