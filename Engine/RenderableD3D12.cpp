@@ -25,9 +25,32 @@ SOFTWARE.
 #include "RenderableD3D12.hpp"
 #include "DriverD3D12.hpp"
 
-RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) {}
+RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {}
 
-bool RenderableD3D12::attachShader(const char * filename, ShaderStage stage) {
+bool RenderableD3D12::attachShader(const char* filename, ShaderStage stage) {
+    const char* target;
+    switch (stage) {
+    case ShaderStage::Fragment: target = "ps_5_0"; break;
+    case ShaderStage::Geometry: target = "gs_5_0"; break;
+    case ShaderStage::TesselationControl: target = "hs_5_0"; break;
+    case ShaderStage::TesselationEvaluation: target = "ds_5_0"; break;
+    case ShaderStage::Vertex: target = "vs_5_0"; break;
+    }
+
+    unsigned int flags;
+
+
+#ifdef _DEBUG
+    UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+    UINT compileFlags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
+    //D3DCompileFromFile(filename, nullptr, nullptr, "main", target, compileFlags, 0, , nullptr);
+    return false;
+}
+
+bool RenderableD3D12::execute() {
     return false;
 }
 

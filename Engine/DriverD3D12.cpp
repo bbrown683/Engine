@@ -76,12 +76,12 @@ bool DriverD3D12::selectGpu(uint8_t id) {
         return false;
 
     // Create the device which is attached to the GPU.
-    if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice))))
+    if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDevice))))
         return false;
 
     // Create a queue for passing our command lists to.
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-    if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue))))
+    if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pPrimaryCommandQueue))))
         return false;
 
     // Describe and create the swap chain.
@@ -92,7 +92,7 @@ bool DriverD3D12::selectGpu(uint8_t id) {
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapchainDesc.SampleDesc.Count = 1;
 
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow())),
+    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pPrimaryCommandQueue.Get(), glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow())),
         &swapchainDesc, nullptr, nullptr, m_pSwapchain.GetAddressOf())))
         return false;
     return true;
@@ -103,10 +103,10 @@ bool DriverD3D12::presentFrame() {
         return false;
 
     // Execute the primary command list.
-    m_pCommandQueue->ExecuteCommandLists(1, &m_pPrimaryCommandList);
+    m_pPrimaryCommandQueue->ExecuteCommandLists(1, &m_pPrimaryCommandList);
  
     // Wait for command queue to complete submission to GPU.
-    m_pCommandQueue->Wait(m_pFence.Get(), UINT64_MAX);
+    m_pPrimaryCommandQueue->Wait(m_pFence.Get(), UINT64_MAX);
     if (FAILED(m_pSwapchain->Present1(1, 0, nullptr)))
         return false;
     m_pFence.Reset();
@@ -115,4 +115,12 @@ bool DriverD3D12::presentFrame() {
 
 std::unique_ptr<Renderable> DriverD3D12::createRenderable(bool once) {
     return std::make_unique<RenderableD3D12>(this);
+}
+
+const ComPtr<ID3D12Device>& DriverD3D12::getDevice() const {
+    return m_pDevice;
+}
+
+const ComPtr<ID3D12CommandList> DriverD3D12::getPrimaryCommandList() const {
+    return m_pPrimaryCommandList;
 }

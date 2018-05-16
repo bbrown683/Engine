@@ -25,12 +25,53 @@ SOFTWARE.
 #include "RenderableVk.hpp"
 #include "DriverVk.hpp"
 
-RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {
-    
-}
+RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableVk::attachShader(const char* filename, ShaderStage stage) {
+
+    // Uses the C API for reading files.
+    // MSVC wants use to use the secure alternative.
+    FILE* file;
+    file = fopen(filename, "rb");
+
+    if (!file)
+        return false;
+    // Get the size of the file so we can preallocate 
+    // the correct amount for the vector.
+    long pos = ftell(file);
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, pos, SEEK_SET);
+
+    std::vector<char> buffer(size + 1);
+    fread(buffer.data(), size, 1, file);
+    buffer[size] = 0;
+    fclose(file);
+
+    vk::ShaderModuleCreateInfo moduleInfo;
+    moduleInfo.codeSize = size;
+    moduleInfo.pCode = reinterpret_cast<const uint32_t*>(buffer.data());
+    auto moduleResult = m_pDriver->getDevice()->createShaderModuleUnique(moduleInfo);
+    if (moduleResult.result != vk::Result::eSuccess)
+        return false;
+
+    vk::PipelineShaderStageCreateInfo shaderStageInfo;
+//    shaderStageInfo.module = moduleResult.value.get(); // Will cause crash...
+    shaderStageInfo.pName = "main";
+    switch (stage) {
+    case ShaderStage::Fragment: shaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment; break;
+    case ShaderStage::Geometry: shaderStageInfo.stage = vk::ShaderStageFlagBits::eGeometry; break;
+    case ShaderStage::TesselationControl: shaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationControl; break;
+    case ShaderStage::TesselationEvaluation: shaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationEvaluation; break;
+    case ShaderStage::Vertex: shaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
+    }
+    m_ShaderStages.push_back(shaderStageInfo);
     return false;
+}
+
+bool RenderableVk::execute() {
+    m_pDriver->getPrimaryCommandBuffer()->executeCommands(m_pCommandBuffer.get());
+    return true;
 }
 
 bool RenderableVk::setIndexBuffer(std::vector<uint16_t> indices) {

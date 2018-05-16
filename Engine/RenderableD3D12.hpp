@@ -34,6 +34,7 @@ SOFTWARE.
 
 #include <vector>
 #include <d3d12.h>
+#include <d3dcompiler.h>
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
 #include <wrl/client.h>
@@ -46,8 +47,10 @@ class RenderableD3D12 : public Renderable {
 public:
     RenderableD3D12(DriverD3D12* pDriver);
     bool attachShader(const char* filename, ShaderStage stage) override;
+    bool execute() override;
     bool setIndexBuffer(std::vector<uint16_t> indices) override;
     bool setVertexBuffer(std::vector<uint32_t> vertices) override;
 private:
+    DriverD3D12* m_pDriver;
     ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
 };

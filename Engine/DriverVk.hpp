@@ -43,9 +43,9 @@ public:
     bool selectGpu(uint8_t id) override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable(bool once) override;
-
-    vk::UniqueDevice& getDevice();
-    vk::UniqueSwapchainKHR& getSwapchain();
+    const vk::UniqueDevice& getDevice() const;
+    const vk::UniqueCommandBuffer& getPrimaryCommandBuffer() const;
+    const vk::UniqueSwapchainKHR& getSwapchain() const;
 private:
     vk::UniqueInstance m_pInstance;
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;
@@ -54,6 +54,7 @@ private:
     vk::UniqueFence m_pFence;
     vk::UniqueSwapchainKHR m_pSwapchain;
     vk::UniqueCommandBuffer m_pPrimaryCommandBuffer;
+    std::vector<vk::UniqueCommandPool> m_pCommandPool;
 
     uint32_t queueFamilyIndex;
     uint32_t queueIndex;

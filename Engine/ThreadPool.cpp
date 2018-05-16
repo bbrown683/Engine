@@ -29,14 +29,14 @@ ThreadPool::ThreadPool(uint32_t threadCount) {
         m_Threads.emplace_back([this] {
         while(true) {
             std::function<void()> function;
-            std::unique_lock<std::mutex> lock(this->m_Mutex);
-            this->m_Condition.wait(lock, [this] { return this->m_Complete 
-                || !this->m_Queue.empty(); });
-            if (this->m_Complete && this->m_Queue.empty())
+            std::unique_lock<std::mutex> lock(m_Mutex);
+            m_Condition.wait(lock, [this] { return m_Complete || !m_Queue.empty(); });
+            if (m_Complete && m_Queue.empty())
                 return;
-            function = std::move(this->m_Queue.front());
-            this->m_Queue.pop();
+            function = std::move(m_Queue.front());
+            m_Queue.pop();
             function();
+            m_Condition.notify_one();
         }
     });
 }
@@ -58,6 +58,6 @@ ThreadPool::~ThreadPool() {
     std::unique_lock<std::mutex> lock(m_Mutex);
     m_Complete = true;
     m_Condition.notify_all();
-    for (std::thread& thread : m_Threads)
+    for (std::thread& thread : m_Threads) 
         thread.join();
 }

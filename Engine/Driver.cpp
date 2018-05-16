@@ -24,12 +24,14 @@ SOFTWARE.
 
 #include "Driver.hpp"
 
+#include <iostream>
+
 Driver::Driver(const GLFWwindow* pWindow) : m_pWindow(pWindow) {
     m_ThreadCount = std::thread::hardware_concurrency();
-    m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
+    //m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
 }
 
-std::vector<Gpu> Driver::getGpus() {
+const std::vector<Gpu>& Driver::getGpus() {
     return m_Gpus;
 }
 
@@ -41,7 +43,7 @@ void Driver::addGpu(Gpu gpu) {
     m_Gpus.push_back(gpu);
 }
 
-uint32_t Driver::getThreadCount() const {
+uint32_t Driver::getThreadCount() {
     return m_ThreadCount;
 }
 

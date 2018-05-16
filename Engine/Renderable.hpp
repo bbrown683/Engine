@@ -25,7 +25,7 @@ SOFTWARE.
 #pragma once
 
 enum class ShaderStage {
-    Fragement,
+    Fragment,
     Geometry,
     TesselationEvaluation,
     TesselationControl,
@@ -33,11 +33,13 @@ enum class ShaderStage {
 };
 
 /// This object contains most of the render-state associated with a single object.
-/// This can include shaders, vertex buffers, index buffers, etc.
+/// This can include shaders, vertex buffers, index buffers, etc. It is associated 
+/// with all of the command buffer/list generation.
 class Renderable {
 public:
     virtual ~Renderable() {}
     virtual bool attachShader(const char* filename, ShaderStage stage) = 0;
+    virtual bool execute() = 0;
     virtual bool setIndexBuffer(std::vector<uint16_t> indices) = 0;
     virtual bool setVertexBuffer(std::vector<uint32_t> vertices) = 0;
 };

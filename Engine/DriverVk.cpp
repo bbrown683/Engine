@@ -295,10 +295,14 @@ std::unique_ptr<Renderable> DriverVk::createRenderable(bool once) {
     return std::make_unique<RenderableVk>(this);
 }
 
-vk::UniqueDevice& DriverVk::getDevice() {
+const vk::UniqueDevice& DriverVk::getDevice() const {
     return m_pDevice;
 }
 
-vk::UniqueSwapchainKHR& DriverVk::getSwapchain() {
+const vk::UniqueCommandBuffer & DriverVk::getPrimaryCommandBuffer() const {
+    return m_pPrimaryCommandBuffer;
+}
+
+const vk::UniqueSwapchainKHR& DriverVk::getSwapchain() const {
     return m_pSwapchain;
 }

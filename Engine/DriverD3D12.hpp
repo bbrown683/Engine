@@ -32,7 +32,6 @@ SOFTWARE.
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <queue>
 #include <vector>
 
 #include <d3d12.h>
@@ -52,15 +51,18 @@ public:
     bool selectGpu(uint8_t id) override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable(bool once) override;
+    const ComPtr<ID3D12Device>& getDevice() const;
+    const ComPtr<ID3D12CommandList> getPrimaryCommandList() const;
 private:
 #ifdef _DEBUG
     ComPtr<IDXGIDebug1> m_pCpuDebug;
     ComPtr<ID3D12Debug1> m_pGpuDebug;
 #endif
     ComPtr<ID3D12Device> m_pDevice;
-    ComPtr<ID3D12CommandQueue> m_pCommandQueue;
+    ComPtr<ID3D12CommandQueue> m_pPrimaryCommandQueue;
     ComPtr<ID3D12CommandList> m_pPrimaryCommandList;
-    std::queue<ComPtr<ID3D12GraphicsCommandList>> m_pBundles;
+    std::vector<ComPtr<ID3D12CommandQueue>> m_pCommandQueueBundles;
+    std::vector<ComPtr<ID3D12GraphicsCommandList>> m_pCommandListBundles;
     ComPtr<ID3D12Fence> m_pFence;
     ComPtr<IDXGIFactory5> m_pFactory;
     std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;

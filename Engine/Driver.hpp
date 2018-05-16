@@ -75,11 +75,11 @@ public:
     /// name - The name of this GPU.
     /// memory - The maximum amount of video memory for this GPU.
     /// software - A boolean of whether this GPU is a software rasterizer and not a physical graphics card. 
-    std::vector<Gpu> getGpus();
+    const std::vector<Gpu>& getGpus();
 protected:
     const GLFWwindow* getWindow();
     void addGpu(Gpu gpu);
-    uint32_t getThreadCount() const;
+    uint32_t getThreadCount();
     ThreadPool* getThreadPool();
 private:
     const GLFWwindow* m_pWindow;
