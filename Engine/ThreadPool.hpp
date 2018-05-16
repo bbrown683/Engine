@@ -30,6 +30,7 @@ SOFTWARE.
 #include <thread>
 #include <vector>
 
+/// Simple threadpool implementation. 
 class ThreadPool {
 public:
     /// Spawns threadCount threads and has them execute in parallel, waiting until a task 

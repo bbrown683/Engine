@@ -40,9 +40,9 @@ public:
 
     // Inherited via IDriver
     bool initialize() override;
-    bool selectGpu(uint8_t id) override;
+    bool selectGpu(uint32_t id) override;
     bool presentFrame() override;
-    std::unique_ptr<Renderable> createRenderable(bool once) override;
+    std::unique_ptr<Renderable> createRenderable() override;
     const vk::UniqueDevice& getDevice() const;
     const vk::UniqueCommandBuffer& getPrimaryCommandBuffer() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;

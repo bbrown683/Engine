@@ -55,8 +55,9 @@ void ThreadPool::wait() {
 }
 
 ThreadPool::~ThreadPool() {
-    std::unique_lock<std::mutex> lock(m_Mutex);
+    m_Mutex.lock();
     m_Complete = true;
+    m_Mutex.unlock();
     m_Condition.notify_all();
     for (std::thread& thread : m_Threads) 
         thread.join();

@@ -58,7 +58,7 @@ bool DriverD3D12::initialize() {
         pAdapter->GetDesc1(&adapterDesc);
 
         Gpu gpu;
-        gpu.id = static_cast<uint8_t>(i);
+        gpu.id = static_cast<uint32_t>(i);
         gpu.memory = static_cast<uint32_t>(adapterDesc.DedicatedVideoMemory);
         gpu.software = adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE ? true : false;
         size_t length = std::wcstombs(gpu.name, adapterDesc.Description, 256);
@@ -70,13 +70,13 @@ bool DriverD3D12::initialize() {
     return !m_pAdapters.empty();
 }
 
-bool DriverD3D12::selectGpu(uint8_t id) {
+bool DriverD3D12::selectGpu(uint32_t id) {
     // id Does not correlate to a proper GPU.
     if (id >= m_pAdapters.size())
         return false;
 
     // Create the device which is attached to the GPU.
-    if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDevice))))
+    if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice))))
         return false;
 
     // Create a queue for passing our command lists to.
@@ -113,7 +113,7 @@ bool DriverD3D12::presentFrame() {
     return true;
 }
 
-std::unique_ptr<Renderable> DriverD3D12::createRenderable(bool once) {
+std::unique_ptr<Renderable> DriverD3D12::createRenderable() {
     return std::make_unique<RenderableD3D12>(this);
 }
 

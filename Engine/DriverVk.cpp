@@ -44,6 +44,7 @@ bool DriverVk::initialize() {
     auto extensionPropertiesResult = vk::enumerateInstanceExtensionProperties();
     if (extensionPropertiesResult.result == vk::Result::eSuccess)
         extensionProperties = extensionPropertiesResult.value;
+
     bool surfaceKHRSupport = false, surfaceKHRWin32Support = false;
     for (vk::ExtensionProperties extension : extensionProperties) {
         if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME))
@@ -87,9 +88,8 @@ bool DriverVk::initialize() {
 
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
     if (instanceResult.result == vk::Result::eSuccess)
-        m_pInstance.swap(instanceResult.value);
-    else 
         return false;
+    m_pInstance.swap(instanceResult.value);
 
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
     surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
@@ -97,17 +97,15 @@ bool DriverVk::initialize() {
 
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
     if (surfaceResult.result == vk::Result::eSuccess)
-        m_pSurface.swap(surfaceResult.value);
-    else
         return false;
+    m_pSurface.swap(surfaceResult.value);
 
     auto m_PhysicalDevicesResult = m_pInstance->enumeratePhysicalDevices();
-    if (m_PhysicalDevicesResult.result == vk::Result::eSuccess)
-        m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
-    else
+    if (m_PhysicalDevicesResult.result != vk::Result::eSuccess)
         return false;
+    m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
 
-    uint8_t counter = 0;
+    uint32_t counter = 0;
     for (vk::PhysicalDevice physicalDevice : m_PhysicalDevices) {
         vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
         
@@ -122,7 +120,7 @@ bool DriverVk::initialize() {
     return true;
 }
 
-bool DriverVk::selectGpu(uint8_t id) {
+bool DriverVk::selectGpu(uint32_t id) {
     // id Does not correlate to a proper GPU.
     if (id >= m_PhysicalDevices.size())
         return false;
@@ -158,7 +156,7 @@ bool DriverVk::selectGpu(uint8_t id) {
     std::vector<uint32_t> graphicsSupport;
     std::vector<uint32_t> surfaceSupport;
 
-    for (int i = 0; i < queueFamilies.size(); i++) {
+    for (size_t i = 0; i < queueFamilies.size(); i++) {
         // Only graphics queues should be checked.
         if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics)
             graphicsSupport.push_back(i);
@@ -189,7 +187,11 @@ bool DriverVk::selectGpu(uint8_t id) {
     if (graphicsSupport.empty() || surfaceSupport.empty())
         return false;
     else {
-
+        // TODO
+        // Find a queue family index and queue index from 
+        // the family to select for operations.
+        queueFamilyIndex = 0;
+        queueIndex = 0;
     }
 
     float priority = 1.0f;
@@ -212,12 +214,11 @@ bool DriverVk::selectGpu(uint8_t id) {
     deviceInfo.queueCreateInfoCount = 1;
 
     auto deviceResult = m_PhysicalDevices[id].createDeviceUnique(deviceInfo);
-    if (deviceResult.result == vk::Result::eSuccess) {
-        if (m_pDevice)
-            m_pDevice.reset();
-        m_pDevice.swap(deviceResult.value);
-    } else
+    if (deviceResult.result != vk::Result::eSuccess)
         return false;
+    if (m_pDevice)
+        m_pDevice.reset();
+    m_pDevice.swap(deviceResult.value);
 
     // Select present mode.
     // Prefer to use Mailbox present mode if it exists.
@@ -257,22 +258,21 @@ bool DriverVk::selectGpu(uint8_t id) {
     swapchainInfo.surface = m_pSurface.get();
 
     auto swapchainResult = m_pDevice->createSwapchainKHRUnique(swapchainInfo);
-    if (swapchainResult.result == vk::Result::eSuccess) {
-        if (m_pSwapchain)
-            m_pSwapchain.reset();
-        m_pSwapchain.swap(swapchainResult.value);
-    } else
+    if (swapchainResult.result != vk::Result::eSuccess)
         return false;
+    if (m_pSwapchain)
+        m_pSwapchain.reset();
+    m_pSwapchain.swap(swapchainResult.value);
     return true;
 }
 
 bool DriverVk::presentFrame() {
     vk::FenceCreateInfo fenceInfo;
     auto fenceResult = m_pDevice->createFenceUnique(fenceInfo);
-    if (fenceResult.result == vk::Result::eSuccess)
-        m_pFence.swap(fenceResult.value);
-    else
+    if (fenceResult.result != vk::Result::eSuccess)
         return false;
+    m_pFence.swap(fenceResult.value);
+
     // Grab a queue related to our device.
     vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, queueIndex);
     
@@ -291,7 +291,7 @@ bool DriverVk::presentFrame() {
     return true;
 }
 
-std::unique_ptr<Renderable> DriverVk::createRenderable(bool once) {
+std::unique_ptr<Renderable> DriverVk::createRenderable() {
     return std::make_unique<RenderableVk>(this);
 }
 
@@ -299,7 +299,7 @@ const vk::UniqueDevice& DriverVk::getDevice() const {
     return m_pDevice;
 }
 
-const vk::UniqueCommandBuffer & DriverVk::getPrimaryCommandBuffer() const {
+const vk::UniqueCommandBuffer& DriverVk::getPrimaryCommandBuffer() const {
     return m_pPrimaryCommandBuffer;
 }
 

@@ -14,6 +14,7 @@
     <ClCompile Include="RenderableSprite.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="ThreadPool.cpp" />
+    <ClCompile Include="System.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameConfig.hpp" />
@@ -31,5 +32,6 @@
     <ClInclude Include="RenderableSprite.hpp" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="ThreadPool.hpp" />
+    <ClInclude Include="System.hpp" />
   </ItemGroup>
 </Project>

@@ -12,3 +12,4 @@ Currently the build system only supports Windows. Start by installing Visual Stu
 * Deferred Shading/Lighting through use of a G-Buffer. 
 * Multithreaded renderer for increased CPU core usage.
 * Scenegraph for optimal object filtering in a scene.
+* Stored shader bytecode on disk for skipping compilation time.

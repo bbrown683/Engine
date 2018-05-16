@@ -32,7 +32,7 @@ SOFTWARE.
 #include "ThreadPool.hpp"
 
 struct Gpu {
-    uint8_t id;
+    uint32_t id;
     char name[256];
     uint32_t memory;
     bool software;
@@ -56,19 +56,12 @@ public:
     /// the Gpu was successfully selected. If this returns false, it should be treated 
     /// as a fatal error if it is the only available Gpu on the system. You can try another
     /// Gpu and see if it succeeds otherwise.
-    virtual bool selectGpu(uint8_t id) = 0;
+    virtual bool selectGpu(uint32_t id) = 0;
 
     /// Submits all of the gathered command buffers/lists to the GPU for execution.
     /// This call will block until all GPU execution has completed. Will present
     /// all information executed in the queue to the swapchain for presentation.
     virtual bool presentFrame() = 0;
-
-    /// Creates a renderable object which at runtime is dynamically filled
-    /// with rendering commands. After these commands are filled, it is
-    /// pushed into a buffer where it is ready to be submitted. With the
-    /// once flag set, this renderable will expire and will need to be 
-    /// recreated.
-    virtual std::unique_ptr<Renderable> createRenderable(bool once) = 0;
 
     /// Returns a list of all GPUs along with information about each one of them.
     /// id - The identifier of this GPU.
@@ -81,6 +74,13 @@ protected:
     void addGpu(Gpu gpu);
     uint32_t getThreadCount();
     ThreadPool* getThreadPool();
+
+    /// Creates a renderable object which at runtime is dynamically filled
+    /// with rendering commands. After these commands are filled, it is
+    /// pushed into a buffer where it is ready to be submitted. With the
+    /// once flag set, this renderable will expire and will need to be 
+    /// recreated.
+    virtual std::unique_ptr<Renderable> createRenderable() = 0;
 private:
     const GLFWwindow* m_pWindow;
     std::vector<Gpu> m_Gpus;

@@ -31,6 +31,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="DriverVk.cpp" />
+    <ClCompile Include="System.cpp" />
     <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -47,6 +48,7 @@
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
+    <ClInclude Include="System.hpp" />
     <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="Scene.hpp" />
   </ItemGroup>

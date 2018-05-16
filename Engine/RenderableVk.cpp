@@ -24,39 +24,22 @@ SOFTWARE.
 
 #include "RenderableVk.hpp"
 #include "DriverVk.hpp"
+#include "System.hpp"
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
-bool RenderableVk::attachShader(const char* filename, ShaderStage stage) {
-
-    // Uses the C API for reading files.
-    // MSVC wants use to use the secure alternative.
-    FILE* file;
-    file = fopen(filename, "rb");
-
-    if (!file)
-        return false;
-    // Get the size of the file so we can preallocate 
-    // the correct amount for the vector.
-    long pos = ftell(file);
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fseek(file, pos, SEEK_SET);
-
-    std::vector<char> buffer(size + 1);
-    fread(buffer.data(), size, 1, file);
-    buffer[size] = 0;
-    fclose(file);
-
+bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
+    auto file = System::readFile(pFilename);
     vk::ShaderModuleCreateInfo moduleInfo;
-    moduleInfo.codeSize = size;
-    moduleInfo.pCode = reinterpret_cast<const uint32_t*>(buffer.data());
+    moduleInfo.pCode = reinterpret_cast<const uint32_t*>(file.first);
+    moduleInfo.codeSize = file.second;
+    
     auto moduleResult = m_pDriver->getDevice()->createShaderModuleUnique(moduleInfo);
     if (moduleResult.result != vk::Result::eSuccess)
         return false;
 
     vk::PipelineShaderStageCreateInfo shaderStageInfo;
-//    shaderStageInfo.module = moduleResult.value.get(); // Will cause crash...
+    shaderStageInfo.module = moduleResult.value.get();
     shaderStageInfo.pName = "main";
     switch (stage) {
     case ShaderStage::Fragment: shaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment; break;
@@ -65,8 +48,8 @@ bool RenderableVk::attachShader(const char* filename, ShaderStage stage) {
     case ShaderStage::TesselationEvaluation: shaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationEvaluation; break;
     case ShaderStage::Vertex: shaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
     }
-    m_ShaderStages.push_back(shaderStageInfo);
-    return false;
+    m_ShaderStages.push_back(std::move(shaderStageInfo));
+    return true;
 }
 
 bool RenderableVk::execute() {

@@ -25,9 +25,6 @@ SOFTWARE.
 #pragma once
 
 #include <vector>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #include "PBRMaterial.hpp"
 
 class Model {
@@ -36,7 +33,6 @@ public:
     std::vector<uint16_t> getIndices();
     PBRMaterial& getPBRMaterial();
 private:
-    Assimp::Importer m_Importer;
     PBRMaterial m_Material;
     std::vector<uint16_t> m_Indices;
 };
