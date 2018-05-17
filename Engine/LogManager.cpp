@@ -12,6 +12,10 @@ void LogManager::logFatal(const char* pMessage) {
     LOG_F(FATAL, pMessage);
 }
 
+void LogManager::logInfo(const char* pMessage) {
+    LOG_F(INFO, pMessage);
+}
+
 void LogManager::logWarning(const char* pMessage) {
     LOG_F(WARNING, pMessage);
 }

@@ -34,15 +34,15 @@ Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
     auto logger = LogManager::getLogger();
     if (!pWindow) {
-        std::cerr << "FATAL: GLFW window is not a valid pointer!\n";
+        logger.logFatal("GLFW window is not a valid pointer!");
         return false;
     }
     if (m_Driver == RendererDriver::Direct3D12) {
         m_pDriver = std::make_unique<DriverD3D12>(pWindow);
-        std::cout << "STATUS: Direct3D12 driver was selected...\n";
+        logger.logInfo("Direct3D12 driver was selected.");
     } else if (m_Driver == RendererDriver::Vulkan) {
         m_pDriver = std::make_unique<DriverVk>(pWindow);
-        std::cout << "STATUS: Vulkan driver was selected...\n";
+        logger.logInfo("Vulkan driver was selected.");
     } else
         return false;
 
@@ -52,9 +52,6 @@ bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
     }
 
     auto gpus = m_pDriver->getGpus();
-    for (auto gpu : gpus)
-        std::cout << gpu.name << std::endl;
-
     if (!m_pDriver->selectGpu(5)) {
         logger.logWarning("Failed to select GPU for operation!");
         return false;

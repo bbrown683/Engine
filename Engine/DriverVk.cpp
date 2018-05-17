@@ -23,6 +23,8 @@ SOFTWARE.
 */
 
 #include "DriverVk.hpp"
+
+#include "LogManager.hpp"
 #include "RenderableVk.hpp"
 
 #include <iostream>
@@ -34,9 +36,11 @@ SOFTWARE.
 DriverVk::DriverVk(const GLFWwindow* pWindow) : Driver(pWindow) {}
 
 bool DriverVk::initialize() {
+    auto logger = LogManager::getLogger();
+
     // GLFW can tell us if there is a vulkan loader.
     if (!glfwVulkanSupported()) {
-        std::cerr << "CRITICAL: Vulkan loader was not found!\n";
+        logger.logFatal("Vulkan loader was not found!");
         return false;
     }
 
@@ -54,7 +58,7 @@ bool DriverVk::initialize() {
     }
 
     if (!surfaceKHRSupport || !surfaceKHRWin32Support) {
-        std::cerr << "CRITICAL: Vulkan driver does not support rendering to a surface!\n";
+        logger.logFatal("Vulkan driver does not support rendering to a surface!");
         return false;
     }
 
@@ -86,8 +90,10 @@ bool DriverVk::initialize() {
     instanceInfo.ppEnabledLayerNames = instanceLayers.data();
 
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
-    if (instanceResult.result != vk::Result::eSuccess)
+    if (instanceResult.result != vk::Result::eSuccess) {
+        logger.logFatal("A Vulkan driver was not detected!");
         return false;
+    }
     m_pInstance.swap(instanceResult.value);
 
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
@@ -95,13 +101,17 @@ bool DriverVk::initialize() {
     surfaceCreateInfo.hwnd = glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow()));
 
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
-    if (surfaceResult.result != vk::Result::eSuccess)
+    if (surfaceResult.result != vk::Result::eSuccess) {
+        logger.logFatal("Could not create a Vulkan rendering surface!");
         return false;
+    }
     m_pSurface.swap(surfaceResult.value);
 
     auto m_PhysicalDevicesResult = m_pInstance->enumeratePhysicalDevices();
-    if (m_PhysicalDevicesResult.result != vk::Result::eSuccess)
+    if (m_PhysicalDevicesResult.result != vk::Result::eSuccess) {
+        logger.logFatal("Could not detect a Vulkan supported hardware device!");
         return false;
+    }
     m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
 
     uint32_t counter = 0;
@@ -119,6 +129,8 @@ bool DriverVk::initialize() {
 }
 
 bool DriverVk::selectGpu(uint32_t id) {
+    auto logger = LogManager::getLogger();
+
     // id Does not correlate to a proper GPU.
     if (id >= m_PhysicalDevices.size())
         return false;
@@ -135,7 +147,7 @@ bool DriverVk::selectGpu(uint32_t id) {
             swapchainSupport = true;
 
     if (!swapchainSupport) {
-        std::cerr << "CRITICAL: Hardware device does not support presenting to a surface!\n";
+        logger.logFatal("Hardware device does not support presenting to a surface!");
         return false;
     }
 
@@ -182,8 +194,10 @@ bool DriverVk::selectGpu(uint32_t id) {
     }
 
     // Graphics or Surface are not supported.
-    if (graphicsSupport.empty() || surfaceSupport.empty())
+    if (graphicsSupport.empty() || surfaceSupport.empty()) {
+        logger.logFatal("Hardware device does not support drawing or surface operations!");
         return false;
+    }
     else {
         // TODO
         // Find a queue family index and queue index from 
@@ -212,8 +226,10 @@ bool DriverVk::selectGpu(uint32_t id) {
     deviceInfo.queueCreateInfoCount = 1;
 
     auto deviceResult = m_PhysicalDevices[id].createDeviceUnique(deviceInfo);
-    if (deviceResult.result != vk::Result::eSuccess)
+    if (deviceResult.result != vk::Result::eSuccess) {
+        logger.logFatal("Failed to create a rendering device!");
         return false;
+    }
     if (m_pDevice)
         m_pDevice.reset();
     m_pDevice.swap(deviceResult.value);
@@ -256,8 +272,10 @@ bool DriverVk::selectGpu(uint32_t id) {
     swapchainInfo.surface = m_pSurface.get();
 
     auto swapchainResult = m_pDevice->createSwapchainKHRUnique(swapchainInfo);
-    if (swapchainResult.result != vk::Result::eSuccess)
+    if (swapchainResult.result != vk::Result::eSuccess) {
+        logger.logFatal("Failed to create a swapchain for rendering surface!");
         return false;
+    }
     if (m_pSwapchain)
         m_pSwapchain.reset();
     m_pSwapchain.swap(swapchainResult.value);
