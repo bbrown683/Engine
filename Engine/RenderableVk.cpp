@@ -31,7 +31,6 @@ RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
     const char* pModuleName = std::strcat(const_cast<char*>(pFilename), ".spv");
-    auto module = m_pDriver->getModuleFromCache(pModuleName))
     auto file = System::readFile(pModuleName);
     vk::ShaderModuleCreateInfo moduleInfo;
     moduleInfo.pCode = reinterpret_cast<const uint32_t*>(file.first);

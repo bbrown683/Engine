@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include "RenderableD3D12.hpp"
+
 #include "DriverD3D12.hpp"
 
 RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {}

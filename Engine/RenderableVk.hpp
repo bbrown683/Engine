@@ -24,10 +24,6 @@ SOFTWARE.
 
 #pragma once
 
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <memory>
 #include <unordered_map>
 #include <vector>

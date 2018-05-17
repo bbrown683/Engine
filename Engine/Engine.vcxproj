@@ -22,21 +22,21 @@
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="DriverD3D12.cpp" />
     <ClCompile Include="Font.cpp" />
-    <ClCompile Include="GameConfig.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="RenderableD3D12.cpp" />
     <ClCompile Include="RenderableMesh.cpp" />
     <ClCompile Include="RenderableSprite.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="DriverVk.cpp" />
     <ClCompile Include="System.cpp" />
+    <ClCompile Include="ThirdParty\miniz.c" />
     <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DriverD3D12.hpp" />
-    <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="Font.hpp" />
     <ClInclude Include="PBRMaterial.hpp" />
@@ -48,7 +48,12 @@
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
+    <ClInclude Include="LogManager.hpp" />
     <ClInclude Include="System.hpp" />
+    <ClInclude Include="ThirdParty\loguru.hpp" />
+    <ClInclude Include="ThirdParty\miniz.h" />
+    <ClInclude Include="ThirdParty\stb_image.h" />
+    <ClInclude Include="ThirdParty\stb_truetype.h" />
     <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="Scene.hpp" />
   </ItemGroup>
@@ -127,7 +132,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -143,8 +148,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -163,7 +168,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>
@@ -184,7 +189,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile />
     </ClCompile>

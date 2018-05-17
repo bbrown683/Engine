@@ -24,14 +24,6 @@ SOFTWARE.
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -54,7 +46,7 @@ public:
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable() override;
     const ComPtr<ID3D12Device>& getDevice() const;
-    const ComPtr<ID3D12CommandList> getPrimaryCommandList() const;
+    const ComPtr<ID3D12CommandList>& getPrimaryCommandList() const;
     const ComPtr<ID3DBlob>& getBlobFromCache(const char* pFilename);
 private:
 #ifdef _DEBUG

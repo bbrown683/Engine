@@ -25,14 +25,14 @@ SOFTWARE.
 #include "Renderer.hpp"
 #include "DriverD3D12.hpp"
 #include "DriverVk.hpp"
+#include "LogManager.hpp"
 
 #include <iostream>
 
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
 bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
-    // This entire function will be logged eventually.
-
+    auto logger = LogManager::getLogger();
     if (!pWindow) {
         std::cerr << "FATAL: GLFW window is not a valid pointer!\n";
         return false;
@@ -47,7 +47,7 @@ bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
         return false;
 
     if (!m_pDriver->initialize()) {
-        std::cerr << "FATAL: Failed to initialize render driver!\n";
+        logger.logFatal("Failed to initialize render driver!");
         return false;
     }
 
@@ -55,8 +55,8 @@ bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
     for (auto gpu : gpus)
         std::cout << gpu.name << std::endl;
 
-    if (!m_pDriver->selectGpu(gpus.back().id)) {
-        std::cerr << "CRITICAL: Failed to select GPU for operation!\n";
+    if (!m_pDriver->selectGpu(5)) {
+        logger.logWarning("Failed to select GPU for operation!");
         return false;
     }
     return true;

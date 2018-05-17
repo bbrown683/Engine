@@ -306,5 +306,6 @@ const vk::UniqueSwapchainKHR& DriverVk::getSwapchain() const {
 }
 
 const vk::UniqueShaderModule& DriverVk::getModuleFromCache(const char* pFilename) const {
-    return m_pModuleCache[pFilename];
+    auto iter = m_pModuleCache.find(pFilename);
+    return iter->second;
 }

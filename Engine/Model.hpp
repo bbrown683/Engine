@@ -25,6 +25,7 @@ SOFTWARE.
 #pragma once
 
 #include <vector>
+
 #include "PBRMaterial.hpp"
 
 class Model {
