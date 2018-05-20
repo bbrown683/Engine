@@ -38,11 +38,16 @@ struct Gpu {
     bool software;
 };
 
-struct GLFWwindow;
+enum class RenderableType {
+    Mesh,
+    Font,
+};
+
+struct SDL_Window;
 class Renderable;
 class Driver {
 public:
-    explicit Driver(const GLFWwindow* pWindow);
+    explicit Driver(const SDL_Window* pWindow);
     virtual ~Driver() {}
 
     /// Initializes all of the driver specific state in order for it to properly function.
@@ -70,7 +75,7 @@ public:
     /// software - A boolean of whether this GPU is a software rasterizer and not a physical graphics card. 
     const std::vector<Gpu>& getGpus();
 protected:
-    const GLFWwindow* getWindow();
+    const SDL_Window* getWindow();
     void addGpu(Gpu gpu);
     uint32_t getThreadCount();
     ThreadPool* getThreadPool();
@@ -82,7 +87,7 @@ protected:
     /// recreated.
     virtual std::unique_ptr<Renderable> createRenderable() = 0;
 private:
-    const GLFWwindow* m_pWindow;
+    const SDL_Window* m_pWindow;
     std::vector<Gpu> m_Gpus;
     uint32_t m_ThreadCount;
     std::unique_ptr<ThreadPool> m_ThreadPool;

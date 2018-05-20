@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include <vector>
-#include <GLFW/glfw3.h>
+#include <SDL2/SDL.h>
 
 #include "Renderer.hpp"
 
@@ -39,18 +39,14 @@ int main(int argc, char** argv) {
 			driver = RendererDriver::Vulkan;
 	}
 
-	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(1024, 768, "Ivy3", nullptr, nullptr);
+    SDL_Init(SDL_INIT_VIDEO);
+	SDL_Window* window = SDL_CreateWindow("Ivy3", 0, 0, 1024, 768, 0);
 
 	Renderer renderer(driver);
 	if (!renderer.createRendererForWindow(window))
 		return -1;
 
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
-	}
-
-	glfwTerminate();
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 	return 0;
 }

@@ -28,21 +28,13 @@ SOFTWARE.
 #include "RenderableVk.hpp"
 
 #include <iostream>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-
-DriverVk::DriverVk(const GLFWwindow* pWindow) : Driver(pWindow) {}
+DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {}
 
 bool DriverVk::initialize() {
     auto logger = LogManager::getLogger();
-
-    // GLFW can tell us if there is a vulkan loader.
-    if (!glfwVulkanSupported()) {
-        logger.logFatal("Vulkan loader was not found!");
-        return false;
-    }
 
     std::vector<vk::ExtensionProperties> extensionProperties;
     auto extensionPropertiesResult = vk::enumerateInstanceExtensionProperties();
@@ -78,9 +70,26 @@ bool DriverVk::initialize() {
     instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 #endif
 
-    uint32_t glfwExtensionCount;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    instanceExtensions.insert(instanceExtensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount);
+    instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    if (!SDL_GetWindowWMInfo(const_cast<SDL_Window*>(getWindow()), &wmInfo))
+        return false;
+
+    switch (wmInfo.subsystem) {
+
+#ifdef VK_USE_PLATFORM_MIR_KHR
+    case SDL_SYSWM_MIR: break;
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    case SDL_SYSWM_WAYLAND: break;
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
+    case SDL_SYSWM_WINDOWS: instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME); break;
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+    case SDL_SYSWM_X11: break;
+#endif
+    default: return false;
+    }
 
     vk::InstanceCreateInfo instanceInfo;
     instanceInfo.pApplicationInfo = &appInfo;
@@ -96,9 +105,17 @@ bool DriverVk::initialize() {
     }
     m_pInstance.swap(instanceResult.value);
 
+#ifdef VK_USE_PLATFORM_MIR_KHR
+
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
-    surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
-    surfaceCreateInfo.hwnd = glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow()));
+    surfaceCreateInfo.hinstance = wmInfo.info.win.hinstance;
+    surfaceCreateInfo.hwnd = wmInfo.info.win.window;
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+
+#endif
 
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
     if (surfaceResult.result != vk::Result::eSuccess) {

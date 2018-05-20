@@ -38,7 +38,7 @@ using namespace Microsoft::WRL;
 
 class DriverD3D12 : public Driver {
 public:
-    DriverD3D12(const GLFWwindow* pWindow);
+    DriverD3D12(const SDL_Window* pWindow);
 
     // Inherited via IDriver
     bool initialize() override;

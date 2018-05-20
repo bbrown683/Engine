@@ -31,7 +31,7 @@ SOFTWARE.
 
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
-bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
+bool Renderer::createRendererForWindow(const SDL_Window* pWindow) {
     auto logger = LogManager::getLogger();
     if (!pWindow) {
         logger.logFatal("GLFW window is not a valid pointer!");
@@ -52,10 +52,11 @@ bool Renderer::createRendererForWindow(const GLFWwindow* pWindow) {
     }
 
     auto gpus = m_pDriver->getGpus();
-    if (!m_pDriver->selectGpu(5)) {
+    if (!m_pDriver->selectGpu(gpus.back().id)) {
         logger.logWarning("Failed to select GPU for operation!");
         return false;
     }
+    m_pDriver->presentFrame();
     return true;
 }
 

@@ -58,7 +58,7 @@ public:
     /// This function initializes the renderer class for the given GLFW window.
     /// This must be the first function called after creating the object. This 
     /// call will return the status of whether the renderer was successfully created.
-    bool createRendererForWindow(const GLFWwindow* pWindow);
+    bool createRendererForWindow(const SDL_Window* pWindow);
 
     bool drawScene(Scene* scene);
 

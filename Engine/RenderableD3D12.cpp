@@ -28,6 +28,10 @@ SOFTWARE.
 
 RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {}
 
+bool RenderableD3D12::execute() {
+    return false;
+}
+
 bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
     const char* pBlobName = std::strcat(const_cast<char*>(pFilename), ".cso");
     const char* target;
@@ -48,10 +52,6 @@ bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
         return false;
     m_pBlobs.push_back(std::move(pBlob));
     return true;
-}
-
-bool RenderableD3D12::execute() {
-    return false;
 }
 
 bool RenderableD3D12::setIndexBuffer(std::vector<uint16_t> indices) {

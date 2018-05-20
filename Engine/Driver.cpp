@@ -26,7 +26,7 @@ SOFTWARE.
 
 #include <iostream>
 
-Driver::Driver(const GLFWwindow* pWindow) : m_pWindow(pWindow) {
+Driver::Driver(const SDL_Window* pWindow) : m_pWindow(pWindow) {
     m_ThreadCount = std::thread::hardware_concurrency();
     m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
 }
@@ -35,7 +35,7 @@ const std::vector<Gpu>& Driver::getGpus() {
     return m_Gpus;
 }
 
-const GLFWwindow* Driver::getWindow() {
+const SDL_Window* Driver::getWindow() {
     return m_pWindow;
 }
 

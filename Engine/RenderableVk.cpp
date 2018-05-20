@@ -29,6 +29,11 @@ SOFTWARE.
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
+bool RenderableVk::execute() {
+    m_pDriver->getPrimaryCommandBuffer()->executeCommands(m_pCommandBuffer.get());
+    return true;
+}
+
 bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
     const char* pModuleName = std::strcat(const_cast<char*>(pFilename), ".spv");
     auto file = System::readFile(pModuleName);
@@ -51,11 +56,6 @@ bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
     case ShaderStage::Vertex: shaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
     }
     m_ShaderStages.push_back(std::move(shaderStageInfo));
-    return true;
-}
-
-bool RenderableVk::execute() {
-    m_pDriver->getPrimaryCommandBuffer()->executeCommands(m_pCommandBuffer.get());
     return true;
 }
 

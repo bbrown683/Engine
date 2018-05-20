@@ -50,6 +50,7 @@
     <ClInclude Include="DriverVk.hpp" />
     <ClInclude Include="LogManager.hpp" />
     <ClInclude Include="System.hpp" />
+    <ClInclude Include="ThirdParty\d3dx12.h" />
     <ClInclude Include="ThirdParty\loguru.hpp" />
     <ClInclude Include="ThirdParty\miniz.h" />
     <ClInclude Include="ThirdParty\stb_image.h" />

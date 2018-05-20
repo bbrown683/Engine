@@ -36,7 +36,7 @@ SOFTWARE.
 
 class DriverVk : public Driver {
 public:
-    DriverVk(const GLFWwindow* pWindow);
+    DriverVk(const SDL_Window* pWindow);
 
     // Inherited via IDriver
     bool initialize() override;

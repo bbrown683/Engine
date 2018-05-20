@@ -38,5 +38,6 @@
     <ClInclude Include="ThirdParty\stb_truetype.h" />
     <ClInclude Include="ThirdParty\miniz.h" />
     <ClInclude Include="ThirdParty\stb_image.h" />
+    <ClInclude Include="ThirdParty\d3dx12.h" />
   </ItemGroup>
 </Project>

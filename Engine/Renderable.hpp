@@ -37,9 +37,10 @@ enum class ShaderStage {
 /// with all of the command buffer/list generation.
 class Renderable {
 public:
-    virtual ~Renderable() {}
-    virtual bool attachShader(const char* pFilename, ShaderStage stage) = 0;
     virtual bool execute() = 0;
+    virtual ~Renderable() {}
+protected:
+    virtual bool attachShader(const char* pFilename, ShaderStage stage) = 0;
     virtual bool setIndexBuffer(std::vector<uint16_t> indices) = 0;
     virtual bool setVertexBuffer(std::vector<uint32_t> vertices) = 0;
 };

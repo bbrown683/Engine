@@ -26,12 +26,10 @@ SOFTWARE.
 #include "RenderableD3D12.hpp"
 
 #include <iostream>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-
-DriverD3D12::DriverD3D12(const GLFWwindow* pWindow) : Driver(pWindow) {}
+DriverD3D12::DriverD3D12(const SDL_Window* pWindow) : Driver(pWindow) {}
 
 bool DriverD3D12::initialize() {
     // Enable debug layer for D3D12 and DXGI.
@@ -43,8 +41,8 @@ bool DriverD3D12::initialize() {
 
     if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pGpuDebug))))
         return false;
-    m_pGpuDebug->EnableDebugLayer();
-    m_pGpuDebug->SetEnableGPUBasedValidation(true);
+    //m_pGpuDebug->EnableDebugLayer();
+    //m_pGpuDebug->SetEnableGPUBasedValidation(true);
 #endif
     // Create the factory which will be used for our swapchain later.
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))))
@@ -92,13 +90,19 @@ bool DriverD3D12::selectGpu(uint32_t id) {
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapchainDesc.SampleDesc.Count = 1;
 
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pPrimaryCommandQueue.Get(), glfwGetWin32Window(const_cast<GLFWwindow*>(getWindow())),
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    if (!SDL_GetWindowWMInfo(const_cast<SDL_Window*>(getWindow()), &wmInfo))
+        return false;
+
+    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pPrimaryCommandQueue.Get(), wmInfo.info.win.window,
         &swapchainDesc, nullptr, nullptr, m_pSwapchain.GetAddressOf())))
         return false;
     return true;
 }
 
 bool DriverD3D12::presentFrame() {
+    /*
     if (FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
         return false;
 
@@ -110,6 +114,8 @@ bool DriverD3D12::presentFrame() {
     if (FAILED(m_pSwapchain->Present1(1, 0, nullptr)))
         return false;
     m_pFence.Reset();
+    */
+    m_pSwapchain->Present(0, 0);
     return true;
 }
 
