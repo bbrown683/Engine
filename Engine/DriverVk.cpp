@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_syswm.h>
 
 DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {}
@@ -78,15 +79,14 @@ bool DriverVk::initialize() {
         return false;
 
     switch (wmInfo.subsystem) {
-
 #ifdef VK_USE_PLATFORM_MIR_KHR
-    case SDL_SYSWM_MIR: break;
+    case SDL_SYSWM_MIR: instanceExtensions.push_back(VK_KHR_MIR_SURFACE_EXTENSION_NAME); break;
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-    case SDL_SYSWM_WAYLAND: break;
+    case SDL_SYSWM_WAYLAND: instanceExtensions.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME); break;
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
     case SDL_SYSWM_WINDOWS: instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME); break;
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
-    case SDL_SYSWM_X11: break;
+    case SDL_SYSWM_X11: instanceExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME); break;
 #endif
     default: return false;
     }
@@ -106,18 +106,20 @@ bool DriverVk::initialize() {
     m_pInstance.swap(instanceResult.value);
 
 #ifdef VK_USE_PLATFORM_MIR_KHR
-
+    vk::MIRSurfaceCreateInfoKHR surfaceCreateInfo;
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-
+    vk::WaylandSurfaceCreateInfoKHR surfaceCreateInfo;
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
     surfaceCreateInfo.hinstance = wmInfo.info.win.hinstance;
     surfaceCreateInfo.hwnd = wmInfo.info.win.window;
+    auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
 #elif defined(VK_USE_PLATFORM_XCB_KHR)
-
+    vk::XCBSurfaceCreateInfoKHR surfaceCreateInfo;
+#else
+    return false;
 #endif
 
-    auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
     if (surfaceResult.result != vk::Result::eSuccess) {
         logger.logFatal("Could not create a Vulkan rendering surface!");
         return false;

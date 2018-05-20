@@ -138,7 +138,6 @@
       <PrecompiledHeaderFile />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>vulkan-1.lib;d3d12.lib;d3dcompiler.lib;dxgi.lib;dxguid.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VULKAN_SDK)/lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -155,7 +154,6 @@
       <PrecompiledHeaderFile />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>vulkan-1.lib;d3d12.lib;d3dcompiler.lib;dxgi.lib;dxguid.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(VULKAN_SDK)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -174,7 +172,6 @@
       <PrecompiledHeaderFile />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -195,7 +192,6 @@
       <PrecompiledHeaderFile />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>

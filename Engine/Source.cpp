@@ -23,6 +23,8 @@ SOFTWARE.
 */
 
 #include <vector>
+
+#define SDL_MAIN_HANDLED 
 #include <SDL2/SDL.h>
 
 #include "Renderer.hpp"
@@ -40,11 +42,16 @@ int main(int argc, char** argv) {
 	}
 
     SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window* window = SDL_CreateWindow("Ivy3", 0, 0, 1024, 768, 0);
+	SDL_Window* window = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, 0);
 
 	Renderer renderer(driver);
 	if (!renderer.createRendererForWindow(window))
 		return -1;
+
+    SDL_Event event;
+    while (SDL_PollEvent(&event) != SDL_WINDOWEVENT_CLOSE) {
+
+    }
 
     SDL_DestroyWindow(window);
     SDL_Quit();
