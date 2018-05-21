@@ -38,6 +38,12 @@ enum class RendererDriver {
     Vulkan,
 };
 
+enum class WindowMode {
+    Borderless,
+    Fullscreen,
+    Windowed,
+};
+
 enum class TextureFiltering {
     Default,
     Bilinear,
