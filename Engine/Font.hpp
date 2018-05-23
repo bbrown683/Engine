@@ -24,8 +24,6 @@ SOFTWARE.
 
 #pragma once
 
-#include "ThirdParty/stb_truetype.h"
-
 class Font {
     bool load(const char* filename);
 };

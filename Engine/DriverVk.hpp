@@ -28,7 +28,17 @@ SOFTWARE.
 #include <unordered_map>
 #include <vector>
 
+#include <SDL2/SDL.h>
+#ifdef SDL_VIDEO_DRIVER_MIR
+#define VK_USE_PLATFORM_MIR_KHR
+#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
+#define VK_USE_PLATFORM_WAYLAND_KHR
+#elif defined(SDL_VIDEO_DRIVER_WINDOWS)
 #define VK_USE_PLATFORM_WIN32_KHR
+#elif defined(SDL_VIDEO_DRIVER_X11)
+#define VK_USE_PLATFORM_XLIB_KHR
+#endif
+
 #define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 
@@ -59,7 +69,6 @@ private:
     std::unordered_map<const char*, vk::UniqueShaderModule> m_pModuleCache;
 
     uint32_t queueFamilyIndex;
-    uint32_t queueIndex;
     bool anisotropy;
     float maxAnisotropy;
 };

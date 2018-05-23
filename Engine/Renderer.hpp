@@ -31,27 +31,27 @@ SOFTWARE.
 
 enum class RendererDriver {
     /// Renderer will select the driver to use.
-    Autodetect,
+    eAutodetect,
     /// Renderer will select Direct3D12 driver. 
-    Direct3D12,
+    eDirect3D12,
     /// Renderer will select select the Vulkan driver.
-    Vulkan,
+    eVulkan,
 };
 
 enum class WindowMode {
-    Borderless,
-    Fullscreen,
-    Windowed,
+    eBorderless,
+    eFullscreen,
+    eWindowed,
 };
 
 enum class TextureFiltering {
-    Default,
-    Bilinear,
-    Trilinear,
-    Aniso2x,
-    Aniso4x,
-    Aniso8x,
-    Aniso16x,
+    eNone,
+    eBilinear,
+    eTrilinear,
+    eAniso2x,
+    eAniso4x,
+    eAniso8x,
+    eAniso16x,
 };
 
 class Renderer {
@@ -66,6 +66,9 @@ public:
     /// call will return the status of whether the renderer was successfully created.
     bool createRendererForWindow(const SDL_Window* pWindow);
 
+    ///
+    ///
+    ///
     bool drawScene(Scene* scene);
 
     /// This function will return the renderer driver currently being used

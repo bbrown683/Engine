@@ -28,8 +28,6 @@ SOFTWARE.
 #include "RenderableVk.hpp"
 
 #include <iostream>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_syswm.h>
 
 DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {}
@@ -42,16 +40,25 @@ bool DriverVk::initialize() {
     if (extensionPropertiesResult.result == vk::Result::eSuccess)
         extensionProperties = extensionPropertiesResult.value;
 
-    bool surfaceKHRSupport = false, surfaceKHRWin32Support = false;
+    bool surfaceKHRSupport = false, wmKHRSupport = false;
     for (vk::ExtensionProperties extension : extensionProperties) {
         if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME))
             surfaceKHRSupport = true;
-        if (strcmp(extension.extensionName, VK_KHR_WIN32_SURFACE_EXTENSION_NAME))
-            surfaceKHRWin32Support = true;
+        if (strcmp(extension.extensionName,
+#ifdef VK_USE_PLATFORM_MIR_KHR
+            VK_KHR_MIR_SURFACE_EXTENSION_NAME))
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+            VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME))
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
+            VK_KHR_WIN32_SURFACE_EXTENSION_NAME))
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+            VK_KHR_XLIB_SURFACE_EXTENSION_NAME))
+#endif
+            wmKHRSupport = true;
     }
 
-    if (!surfaceKHRSupport || !surfaceKHRWin32Support) {
-        logger.logFatal("Vulkan driver does not support rendering to a surface!");
+    if (!surfaceKHRSupport || !wmKHRSupport) {
+        logger.logMessage("Vulkan driver does not support rendering to a surface!");
         return false;
     }
 
@@ -85,10 +92,10 @@ bool DriverVk::initialize() {
     case SDL_SYSWM_WAYLAND: instanceExtensions.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME); break;
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
     case SDL_SYSWM_WINDOWS: instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME); break;
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-    case SDL_SYSWM_X11: instanceExtensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME); break;
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+    case SDL_SYSWM_X11: instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME); break;
 #endif
-    default: return false;
+    default: logger.logMessage("Could not detect a supported Window Manager!"); return false;
     }
 
     vk::InstanceCreateInfo instanceInfo;
@@ -100,35 +107,45 @@ bool DriverVk::initialize() {
 
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
     if (instanceResult.result != vk::Result::eSuccess) {
-        logger.logFatal("A Vulkan driver was not detected!");
+        logger.logMessage("A Vulkan driver was not detected!");
         return false;
     }
     m_pInstance.swap(instanceResult.value);
 
 #ifdef VK_USE_PLATFORM_MIR_KHR
     vk::MIRSurfaceCreateInfoKHR surfaceCreateInfo;
+    surfaceCreateInfo.connection = wmInfo.info.mir.connection;
+    surfaceCreateInfo.surface = wmInfo.info.mir.surface;
+    auto SurfaceResult = m_pInstance->createMirSurfaceKHRUnique(surfaceCreateInfo);
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
     vk::WaylandSurfaceCreateInfoKHR surfaceCreateInfo;
+    surfaceCreateInfo.display = wmInfo.info.wl.display;
+    surfaceCreateInfo.surface = wmInfo.info.wl.surface;
+    auto surfaceResult = m_pInstance->createWaylandSurfaceKHRUnique(surfaceCreateInfo);
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
     vk::Win32SurfaceCreateInfoKHR surfaceCreateInfo;
     surfaceCreateInfo.hinstance = wmInfo.info.win.hinstance;
     surfaceCreateInfo.hwnd = wmInfo.info.win.window;
     auto surfaceResult = m_pInstance->createWin32SurfaceKHRUnique(surfaceCreateInfo);
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
     vk::XCBSurfaceCreateInfoKHR surfaceCreateInfo;
+    surfaceCreateInfo.dpy = wmInfo.info.x11.display;
+    surfaceCreateInfo.window = wmInfo.info.x11.window;
+    auto surfaceResult = m_pInstance->createXlibSurfaceKHRUnique(surfaceCreateInfo);
 #else
+    logger.logMessage("Could not detect a supported Window Manager!");
     return false;
 #endif
 
     if (surfaceResult.result != vk::Result::eSuccess) {
-        logger.logFatal("Could not create a Vulkan rendering surface!");
+        logger.logMessage("Could not create a Vulkan rendering surface!");
         return false;
     }
     m_pSurface.swap(surfaceResult.value);
 
     auto m_PhysicalDevicesResult = m_pInstance->enumeratePhysicalDevices();
     if (m_PhysicalDevicesResult.result != vk::Result::eSuccess) {
-        logger.logFatal("Could not detect a Vulkan supported hardware device!");
+        logger.logMessage("Could not detect a Vulkan supported hardware device!");
         return false;
     }
     m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
@@ -166,7 +183,7 @@ bool DriverVk::selectGpu(uint32_t id) {
             swapchainSupport = true;
 
     if (!swapchainSupport) {
-        logger.logFatal("Hardware device does not support presenting to a surface!");
+        logger.logMessage("Hardware device does not support presenting to a surface!");
         return false;
     }
 
@@ -214,15 +231,20 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     // Graphics or Surface are not supported.
     if (graphicsSupport.empty() || surfaceSupport.empty()) {
-        logger.logFatal("Hardware device does not support drawing or surface operations!");
+        logger.logMessage("Hardware device does not support drawing or surface operations!");
         return false;
-    }
-    else {
-        // TODO
-        // Find a queue family index and queue index from 
-        // the family to select for operations.
-        queueFamilyIndex = 0;
-        queueIndex = 0;
+    } else {
+        // Pick first queue family which supports both.
+        bool foundQueueIndex = false;
+        for (int i = 0; i < graphicsSupport.size() || foundQueueIndex == true; i++) {
+            for (int j = 0; j < surfaceSupport.size(); i++) {
+                if (graphicsSupport[i] = surfaceSupport[j]) {
+                    queueFamilyIndex = graphicsSupport[i];
+                    foundQueueIndex = true;
+                    break;
+                }
+            }
+        }
     }
 
     float priority = 1.0f;
@@ -246,7 +268,7 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     auto deviceResult = m_PhysicalDevices[id].createDeviceUnique(deviceInfo);
     if (deviceResult.result != vk::Result::eSuccess) {
-        logger.logFatal("Failed to create a rendering device!");
+        logger.logMessage("Failed to create a rendering device!");
         return false;
     }
     if (m_pDevice)
@@ -292,7 +314,7 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     auto swapchainResult = m_pDevice->createSwapchainKHRUnique(swapchainInfo);
     if (swapchainResult.result != vk::Result::eSuccess) {
-        logger.logFatal("Failed to create a swapchain for rendering surface!");
+        logger.logMessage("Failed to create a swapchain for rendering surface!");
         return false;
     }
     if (m_pSwapchain)
@@ -309,7 +331,7 @@ bool DriverVk::presentFrame() {
     m_pFence.swap(fenceResult.value);
 
     // Grab a queue related to our device.
-    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, queueIndex);
+    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, 0);
     
     // We are only submitting  the primary command list.
     vk::SubmitInfo submitInfo;

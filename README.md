@@ -2,12 +2,18 @@
 Experimental Direct3D12 and Vulkan Engine.
 
 # Building
-Currently the build system only supports Windows via Visual Studio 2017. This project uses [vcpkg](https://github.com/Microsoft/vcpkg) for installing dependencies.
+Currently the build system only supports Windows via Visual Studio 2017. This project uses [vcpkg](https://github.com/Microsoft/vcpkg) for installing dependencies. A CMake script is under development for cross platform support.
 
-# vcpkg Dependencies
+## Library Dependencies
+* freetype2
+* icu
+* libogg
+* libpng
+* libvorbis 
 * SDL2
+* zlib
 
-# External Dependencies
+## External SDKs
 * Vulkan SDK
 * Windows 10 SDK
 

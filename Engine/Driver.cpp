@@ -31,12 +31,20 @@ Driver::Driver(const SDL_Window* pWindow) : m_pWindow(pWindow) {
     m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
 }
 
+MaxAnisotropy Driver::getMaxAnisotropy() {
+    return m_MaxAnisotropy;
+}
+
 const std::vector<Gpu>& Driver::getGpus() {
     return m_Gpus;
 }
 
 const SDL_Window* Driver::getWindow() {
     return m_pWindow;
+}
+
+void Driver::setMaxAnisotropy(MaxAnisotropy anisotropyLevel) {
+    m_MaxAnisotropy = anisotropyLevel;
 }
 
 void Driver::addGpu(Gpu gpu) {

@@ -38,6 +38,14 @@ struct Gpu {
     bool software;
 };
 
+enum class MaxAnisotropy {
+    eNone,
+    e2x,
+    e4x,
+    e8x,
+    e16x,
+};
+
 enum class RenderableType {
     Mesh,
     Font,
@@ -68,6 +76,9 @@ public:
     /// all information executed in the queue to the swapchain for presentation.
     virtual bool presentFrame() = 0;
 
+    /// Returns the maximum supported Anisotropy level by the driver.
+    MaxAnisotropy getMaxAnisotropy();
+
     /// Returns a list of all GPUs along with information about each one of them.
     /// id - The identifier of this GPU.
     /// name - The name of this GPU.
@@ -76,6 +87,7 @@ public:
     const std::vector<Gpu>& getGpus();
 protected:
     const SDL_Window* getWindow();
+    void setMaxAnisotropy(MaxAnisotropy anisotropyLevel);
     void addGpu(Gpu gpu);
     uint32_t getThreadCount();
     ThreadPool* getThreadPool();
@@ -88,6 +100,7 @@ protected:
     virtual std::unique_ptr<Renderable> createRenderable() = 0;
 private:
     const SDL_Window* m_pWindow;
+    MaxAnisotropy m_MaxAnisotropy;
     std::vector<Gpu> m_Gpus;
     uint32_t m_ThreadCount;
     std::unique_ptr<ThreadPool> m_ThreadPool;

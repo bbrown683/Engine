@@ -32,28 +32,30 @@ SOFTWARE.
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
 bool Renderer::createRendererForWindow(const SDL_Window* pWindow) {
+    // TODO: If autodetect is enabled, we will need to enumerate 
+    // both drivers and select the best one.
     auto logger = LogManager::getLogger();
     if (!pWindow) {
-        logger.logFatal("GLFW window is not a valid pointer!");
+        logger.logMessage("GLFW window is not a valid pointer!");
         return false;
     }
     if (m_Driver == RendererDriver::Direct3D12) {
         m_pDriver = std::make_unique<DriverD3D12>(pWindow);
-        logger.logInfo("Direct3D12 driver was selected.");
+        logger.logMessage("Direct3D12 driver was selected.");
     } else if (m_Driver == RendererDriver::Vulkan) {
         m_pDriver = std::make_unique<DriverVk>(pWindow);
-        logger.logInfo("Vulkan driver was selected.");
+        logger.logMessage("Vulkan driver was selected.");
     } else
         return false;
 
     if (!m_pDriver->initialize()) {
-        logger.logFatal("Failed to initialize render driver!");
+        logger.logMessage("Failed to initialize render driver!");
         return false;
     }
 
     auto gpus = m_pDriver->getGpus();
     if (!m_pDriver->selectGpu(gpus.back().id)) {
-        logger.logWarning("Failed to select GPU for operation!");
+        LOG_MESSAGE("Failed to select GPU for operation!");
         return false;
     }
     m_pDriver->presentFrame();

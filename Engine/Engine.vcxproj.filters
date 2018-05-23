@@ -15,7 +15,6 @@
     <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="LogManager.cpp" />
-    <ClCompile Include="ThirdParty\miniz.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.hpp" />
@@ -34,10 +33,5 @@
     <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="System.hpp" />
     <ClInclude Include="LogManager.hpp" />
-    <ClInclude Include="ThirdParty\loguru.hpp" />
-    <ClInclude Include="ThirdParty\stb_truetype.h" />
-    <ClInclude Include="ThirdParty\miniz.h" />
-    <ClInclude Include="ThirdParty\stb_image.h" />
-    <ClInclude Include="ThirdParty\d3dx12.h" />
   </ItemGroup>
 </Project>
