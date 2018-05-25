@@ -153,10 +153,10 @@ bool DriverVk::initialize() {
     uint32_t counter = 0;
     for (vk::PhysicalDevice physicalDevice : m_PhysicalDevices) {
         vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
-        
+
         Gpu gpu;
         gpu.id = counter++;
-        std::strcpy(gpu.name,properties.deviceName);
+        std::strcpy(gpu.name, properties.deviceName);
         gpu.memory = 0;
         properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false;
         addGpu(gpu);
@@ -236,9 +236,9 @@ bool DriverVk::selectGpu(uint32_t id) {
     } else {
         // Pick first queue family which supports both.
         bool foundQueueIndex = false;
-        for (int i = 0; i < graphicsSupport.size() || foundQueueIndex == true; i++) {
-            for (int j = 0; j < surfaceSupport.size(); i++) {
-                if (graphicsSupport[i] = surfaceSupport[j]) {
+        for (size_t i = 0; i < graphicsSupport.size() || foundQueueIndex != true; i++) {
+            for (size_t j = 0; j < surfaceSupport.size(); j++) {
+                if (graphicsSupport[i] == surfaceSupport[j]) {
                     queueFamilyIndex = graphicsSupport[i];
                     foundQueueIndex = true;
                     break;
@@ -337,14 +337,15 @@ bool DriverVk::presentFrame() {
     vk::SubmitInfo submitInfo;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_pPrimaryCommandBuffer.get();
-    queue.submit(submitInfo, m_pFence.get());
+//    queue.submit(submitInfo, m_pFence.get());
 
-    m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
+//    m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
+    m_pDevice->resetFences(m_pFence.get());
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_pSwapchain.get();
-    queue.presentKHR(presentInfo);
+//    queue.presentKHR(presentInfo);
     return true;
 }
 

@@ -69,7 +69,7 @@ public:
     ///
     ///
     ///
-    bool drawScene(Scene* scene);
+    bool drawScene(Scene& scene);
 
     /// This function will return the renderer driver currently being used
     /// by the renderer. This will not return Autodetect, which will select either
@@ -94,6 +94,10 @@ public:
 
     /// 
     void setTextureFiltering(TextureFiltering textureFiltering);
+
+    ///
+    virtual void onButtonClick() = 0;
+
 private:
     std::unique_ptr<Driver> m_pDriver;
     RendererDriver m_Driver;

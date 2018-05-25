@@ -39,10 +39,10 @@ bool Renderer::createRendererForWindow(const SDL_Window* pWindow) {
         logger.logMessage("GLFW window is not a valid pointer!");
         return false;
     }
-    if (m_Driver == RendererDriver::Direct3D12) {
+    if (m_Driver == RendererDriver::eDirect3D12) {
         m_pDriver = std::make_unique<DriverD3D12>(pWindow);
         logger.logMessage("Direct3D12 driver was selected.");
-    } else if (m_Driver == RendererDriver::Vulkan) {
+    } else if (m_Driver == RendererDriver::eVulkan) {
         m_pDriver = std::make_unique<DriverVk>(pWindow);
         logger.logMessage("Vulkan driver was selected.");
     } else

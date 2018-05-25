@@ -28,7 +28,8 @@ SOFTWARE.
 #include <unordered_map>
 #include <vector>
 
-#include <SDL2/SDL.h>
+
+#include <SDL2/SDL_config.h>
 #ifdef SDL_VIDEO_DRIVER_MIR
 #define VK_USE_PLATFORM_MIR_KHR
 #elif defined(SDL_VIDEO_DRIVER_WAYLAND)

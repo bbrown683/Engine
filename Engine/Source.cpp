@@ -33,20 +33,26 @@ int main(int argc, char** argv) {
 	std::vector<const char*> args;
 	args.insert(args.begin(), argv, argv + argc);
 
-	RendererDriver driver = RendererDriver::Autodetect;
+	RendererDriver driver = RendererDriver::eAutodetect;
 	for (const char* arg : args) {
 		if (std::strcmp(arg, "--d3d12") == 0)
-			driver = RendererDriver::Direct3D12;
+			driver = RendererDriver::eDirect3D12;
 		if (std::strcmp(arg, "--vulkan") == 0)
-			driver = RendererDriver::Vulkan;
+			driver = RendererDriver::eVulkan;
 	}
 
     SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window* window = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, 0);
+	SDL_Window* window = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+    if (!window) {
+        SDL_Quit();
+        return false;
+    }
 
 	Renderer renderer(driver);
-	if (!renderer.createRendererForWindow(window))
-		return -1;
+    if (!renderer.createRendererForWindow(window)) {
+        SDL_Quit();
+        return -1;
+    }
 
     bool running = true;
     while (running) {
