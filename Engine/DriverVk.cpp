@@ -276,7 +276,7 @@ bool DriverVk::selectGpu(uint32_t id) {
     m_pDevice.swap(deviceResult.value);
 
     // Select present mode.
-    // Prefer to use Mailbox present mode if it exists.
+    // Prefer to use Mailbox present mode if it exists. (Triple buffering Vsync)
     vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
     if (surfaceCapabilities.minImageCount > 2)
         for (vk::PresentModeKHR tempPresentMode : surfacePresentModes)
@@ -331,7 +331,7 @@ bool DriverVk::presentFrame() {
     m_pFence.swap(fenceResult.value);
 
     // Grab a queue related to our device.
-    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, 0);
+//    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, 0);
     
     // We are only submitting  the primary command list.
     vk::SubmitInfo submitInfo;
@@ -340,7 +340,7 @@ bool DriverVk::presentFrame() {
 //    queue.submit(submitInfo, m_pFence.get());
 
 //    m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
-    m_pDevice->resetFences(m_pFence.get());
+//    m_pDevice->resetFences(m_pFence.get());
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.swapchainCount = 1;

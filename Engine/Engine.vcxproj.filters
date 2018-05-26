@@ -15,6 +15,7 @@
     <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="LogManager.cpp" />
+    <ClCompile Include="EngineRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.hpp" />
@@ -33,5 +34,6 @@
     <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="System.hpp" />
     <ClInclude Include="LogManager.hpp" />
+    <ClInclude Include="EngineRenderer.hpp" />
   </ItemGroup>
 </Project>

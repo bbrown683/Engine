@@ -24,10 +24,7 @@ SOFTWARE.
 
 #include <vector>
 
-#define SDL_MAIN_HANDLED 
-#include <SDL2/SDL.h>
-
-#include "Renderer.hpp"
+#include "EngineRenderer.hpp"
 
 int main(int argc, char** argv) {
 	std::vector<const char*> args;
@@ -41,30 +38,8 @@ int main(int argc, char** argv) {
 			driver = RendererDriver::eVulkan;
 	}
 
-    SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window* window = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
-    if (!window) {
-        SDL_Quit();
-        return false;
-    }
-
-	Renderer renderer(driver);
-    if (!renderer.createRendererForWindow(window)) {
-        SDL_Quit();
-        return -1;
-    }
-
-    bool running = true;
-    while (running) {
-        SDL_Event event;
-        while(SDL_PollEvent(&event)) {
-            switch (event.type) {
-            case SDL_QUIT: running = false; break;
-            }
-        }
-    }
-
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-	return 0;
+	EngineRenderer engine(driver);
+	if (!engine.initialize())
+		return false;
+	return engine.executeEventLoop();
 }

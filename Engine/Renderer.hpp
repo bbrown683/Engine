@@ -54,6 +54,7 @@ enum class TextureFiltering {
     eAniso16x,
 };
 
+struct SDL_Window;
 class Renderer {
 public:
     /// Constructs a renderer with the specified rendering driver.
@@ -61,10 +62,12 @@ public:
     /// to complete object creation.
     explicit Renderer(RendererDriver driver);
 
+	virtual ~Renderer();
+
     /// This function initializes the renderer class for the given GLFW window.
     /// This must be the first function called after creating the object. This 
     /// call will return the status of whether the renderer was successfully created.
-    bool createRendererForWindow(const SDL_Window* pWindow);
+    bool initialize();
 
     ///
     ///
@@ -95,10 +98,18 @@ public:
     /// 
     void setTextureFiltering(TextureFiltering textureFiltering);
 
-    ///
-    virtual void onButtonClick() = 0;
+    /// 
+    virtual void onKeyPress();
+
+	/// Will call the event loop for this renderer.
+	int executeEventLoop();
+
+	/// Will cause the event loop to stop execution and close.
+	void shutdown();
 
 private:
+	SDL_Window* m_pWindow;
+	bool m_Running;
     std::unique_ptr<Driver> m_pDriver;
     RendererDriver m_Driver;
     bool m_Vsync;

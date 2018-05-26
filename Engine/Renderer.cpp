@@ -27,26 +27,44 @@ SOFTWARE.
 #include "DriverVk.hpp"
 #include "LogManager.hpp"
 
-#include <iostream>
+#include <SDL2/SDL.h>
 
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
-bool Renderer::createRendererForWindow(const SDL_Window* pWindow) {
+Renderer::~Renderer() {
+	SDL_DestroyWindow(m_pWindow);
+	SDL_Quit();
+}
+
+bool Renderer::initialize() {
     // TODO: If autodetect is enabled, we will need to enumerate 
     // both drivers and select the best one.
     auto logger = LogManager::getLogger();
-    if (!pWindow) {
-        logger.logMessage("GLFW window is not a valid pointer!");
+
+	SDL_Init(SDL_INIT_VIDEO);
+	m_pWindow = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, 
+		SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+	if (!m_pWindow) {
+		SDL_Quit();
+		return false;
+	}
+
+	if (m_Driver == RendererDriver::eDirect3D12) {
+		m_pDriver = std::make_unique<DriverD3D12>(m_pWindow);
+		logger.logMessage("Direct3D12 driver was selected.");
+	}
+	else if (m_Driver == RendererDriver::eVulkan) {
+		m_pDriver = std::make_unique<DriverVk>(m_pWindow);
+
+		logger.logMessage("Vulkan driver was selected.");
+	}
+	else
+		return false;
+
+    if (!m_pWindow) {
+        logger.logMessage("SDL window is invalid!");
         return false;
     }
-    if (m_Driver == RendererDriver::eDirect3D12) {
-        m_pDriver = std::make_unique<DriverD3D12>(pWindow);
-        logger.logMessage("Direct3D12 driver was selected.");
-    } else if (m_Driver == RendererDriver::eVulkan) {
-        m_pDriver = std::make_unique<DriverVk>(pWindow);
-        logger.logMessage("Vulkan driver was selected.");
-    } else
-        return false;
 
     if (!m_pDriver->initialize()) {
         logger.logMessage("Failed to initialize render driver!");
@@ -79,6 +97,29 @@ bool Renderer::getVsync() {
 
 void Renderer::setTextureFiltering(TextureFiltering textureFiltering) {
     m_TextureFiltering = textureFiltering;
+}
+
+void Renderer::onKeyPress() {}
+
+int Renderer::executeEventLoop() {
+	while (m_Running) {
+		SDL_Event event;
+		while (SDL_PollEvent(&event) != false) {
+			// Dispatch appropriate callback
+			switch (event.type) {
+			case SDL_KEYDOWN: onKeyPress(); break;
+			case SDL_QUIT: shutdown(); break;
+			}
+		}
+	}
+
+	SDL_DestroyWindow(m_pWindow);
+	SDL_Quit();
+	return 0;
+}
+
+void Renderer::shutdown() {
+	m_Running = false;
 }
 
 TextureFiltering Renderer::getTextureFiltering() {
