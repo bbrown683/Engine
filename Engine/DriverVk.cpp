@@ -68,7 +68,7 @@ bool DriverVk::initialize() {
         layerProperties = layerPropertiesResult.value;
 
     vk::ApplicationInfo appInfo;
-    appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_0;
 
     std::vector<const char*> instanceExtensions;
     std::vector<const char*> instanceLayers;
@@ -324,6 +324,7 @@ bool DriverVk::selectGpu(uint32_t id) {
 }
 
 bool DriverVk::presentFrame() {
+	/*
     vk::FenceCreateInfo fenceInfo;
     auto fenceResult = m_pDevice->createFenceUnique(fenceInfo);
     if (fenceResult.result != vk::Result::eSuccess)
@@ -331,21 +332,22 @@ bool DriverVk::presentFrame() {
     m_pFence.swap(fenceResult.value);
 
     // Grab a queue related to our device.
-//    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, 0);
+    vk::Queue queue = m_pDevice->getQueue(queueFamilyIndex, 0);
     
     // We are only submitting  the primary command list.
     vk::SubmitInfo submitInfo;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_pPrimaryCommandBuffer.get();
-//    queue.submit(submitInfo, m_pFence.get());
+    queue.submit(submitInfo, m_pFence.get());
 
-//    m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
-//    m_pDevice->resetFences(m_pFence.get());
+    m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
+    m_pDevice->resetFences(m_pFence.get());
 
     vk::PresentInfoKHR presentInfo;
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_pSwapchain.get();
-//    queue.presentKHR(presentInfo);
+    queue.presentKHR(presentInfo);
+	*/
     return true;
 }
 

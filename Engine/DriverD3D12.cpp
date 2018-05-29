@@ -115,7 +115,6 @@ bool DriverD3D12::presentFrame() {
         return false;
     m_pFence.Reset();
     */
-    m_pSwapchain->Present(0, 0);
     return true;
 }
 
