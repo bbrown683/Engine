@@ -44,7 +44,10 @@ public:
     bool setVertexBuffer(std::vector<uint32_t> vertices) override;
 private:
     DriverVk* m_pDriver;
-    vk::UniqueCommandBuffer m_pCommandBuffer;
+	vk::UniqueBuffer m_IndexBuffer;
+	vk::UniqueBuffer m_VertexBuffer;
+	vk::UniqueDeviceMemory m_IndexBufferMemory;
+	vk::UniqueDeviceMemory m_VertexBufferMemory;
     vk::UniquePipeline m_Pipeline;
     vk::UniqueRenderPass m_RenderPass;
     std::vector<vk::PipelineShaderStageCreateInfo> m_ShaderStages;

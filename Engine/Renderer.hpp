@@ -27,7 +27,6 @@ SOFTWARE.
 #include <memory>
 
 #include "Driver.hpp"
-#include "Scene.hpp"
 
 enum class RendererDriver {
     /// Renderer will select the driver to use.
@@ -68,11 +67,6 @@ public:
     /// This must be the first function called after creating the object. This 
     /// call will return the status of whether the renderer was successfully created.
     bool initialize();
-
-    ///
-    ///
-    ///
-    bool drawScene(Scene& scene);
 
     /// This function will return the renderer driver currently being used
     /// by the renderer. This will not return Autodetect, which will select either

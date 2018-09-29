@@ -30,18 +30,11 @@ SOFTWARE.
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableVk::execute() {
-    m_pDriver->getPrimaryCommandBuffer()->executeCommands(m_pCommandBuffer.get());
-    return true;
+	return false;
 }
 
 bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
-    const char* pModuleName = std::strcat(const_cast<char*>(pFilename), ".spv");
-    auto file = System::readFile(pModuleName);
-    vk::ShaderModuleCreateInfo moduleInfo;
-    moduleInfo.pCode = reinterpret_cast<const uint32_t*>(file.first);
-    moduleInfo.codeSize = file.second;
-    
-    auto moduleResult = m_pDriver->getDevice()->createShaderModuleUnique(moduleInfo);
+	auto moduleResult = m_pDriver->getShaderModuleFromFile(pFilename);
     if (moduleResult.result != vk::Result::eSuccess)
         return false;
 
@@ -64,5 +57,8 @@ bool RenderableVk::setIndexBuffer(std::vector<uint16_t> indices) {
 }
 
 bool RenderableVk::setVertexBuffer(std::vector<uint32_t> vertices) {
+	vk::DeviceSize bufferSize = sizeof(uint32_t) * vertices.size();
+	m_pDriver->createBuffer(bufferSize, vk::BufferUsageFlagBits::eVertexBuffer,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     return false;
 }

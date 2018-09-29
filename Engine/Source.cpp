@@ -26,10 +26,20 @@ SOFTWARE.
 
 #include "EngineRenderer.hpp"
 
+#pragma warning(disable : 4018)
+#pragma warning(disable : 4996)
+#define LOGURU_IMPLEMENTATION 1
+#include "thirdparty/loguru.hpp"
+
 int main(int argc, char** argv) {
+	loguru::init(argc, argv);
+
+#ifndef _DEBUG
+	loguru::add_file("runtime.log", loguru::Truncate, loguru::Verbosity_MAX);
+#endif
+
 	std::vector<const char*> args;
 	args.insert(args.begin(), argv, argv + argc);
-
 	RendererDriver driver = RendererDriver::eAutodetect;
 	for (const char* arg : args) {
 		if (std::strcmp(arg, "--d3d12") == 0)
@@ -41,5 +51,6 @@ int main(int argc, char** argv) {
 	EngineRenderer engine(driver);
 	if (!engine.initialize())
 		return false;
+
 	return engine.executeEventLoop();
 }

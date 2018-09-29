@@ -58,6 +58,11 @@ public:
     const vk::UniqueCommandBuffer& getPrimaryCommandBuffer() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;
     const vk::UniqueShaderModule& getModuleFromCache(const char* pFilename) const;
+
+	// Helper methods.
+	vk::ResultValue<vk::UniqueShaderModule> getShaderModuleFromFile(const char* pFilename);
+	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties);
+
 private:
     vk::UniqueInstance m_pInstance;
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;
@@ -68,7 +73,6 @@ private:
     vk::UniqueCommandBuffer m_pPrimaryCommandBuffer;
     std::vector<vk::UniqueCommandPool> m_pCommandPool;
     std::unordered_map<const char*, vk::UniqueShaderModule> m_pModuleCache;
-
     uint32_t queueFamilyIndex;
     bool anisotropy;
     float maxAnisotropy;

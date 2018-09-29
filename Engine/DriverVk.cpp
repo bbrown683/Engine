@@ -24,17 +24,16 @@ SOFTWARE.
 
 #include "DriverVk.hpp"
 
-#include "LogManager.hpp"
-#include "RenderableVk.hpp"
-
 #include <iostream>
 #include <SDL2/SDL_syswm.h>
+
+#include "thirdparty/loguru.hpp"
+#include "RenderableVk.hpp"
+#include "System.hpp"
 
 DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {}
 
 bool DriverVk::initialize() {
-    auto logger = LogManager::getLogger();
-
     std::vector<vk::ExtensionProperties> extensionProperties;
     auto extensionPropertiesResult = vk::enumerateInstanceExtensionProperties();
     if (extensionPropertiesResult.result == vk::Result::eSuccess)
@@ -58,7 +57,7 @@ bool DriverVk::initialize() {
     }
 
     if (!surfaceKHRSupport || !wmKHRSupport) {
-        logger.logMessage("Vulkan driver does not support rendering to a surface!");
+        LOG_F(FATAL, "Vulkan driver does not support rendering to a surface!");
         return false;
     }
 
@@ -95,7 +94,7 @@ bool DriverVk::initialize() {
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
     case SDL_SYSWM_X11: instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME); break;
 #endif
-    default: logger.logMessage("Could not detect a supported Window Manager!"); return false;
+    default: LOG_F(FATAL, "Could not detect a supported Window Manager!"); return false;
     }
 
     vk::InstanceCreateInfo instanceInfo;
@@ -107,7 +106,7 @@ bool DriverVk::initialize() {
 
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
     if (instanceResult.result != vk::Result::eSuccess) {
-        logger.logMessage("A Vulkan driver was not detected!");
+		LOG_F(FATAL, "A Vulkan driver was not detected!");
         return false;
     }
     m_pInstance.swap(instanceResult.value);
@@ -138,14 +137,14 @@ bool DriverVk::initialize() {
 #endif
 
     if (surfaceResult.result != vk::Result::eSuccess) {
-        logger.logMessage("Could not create a Vulkan rendering surface!");
+        LOG_F(FATAL, "Could not create a Vulkan rendering surface!");
         return false;
     }
     m_pSurface.swap(surfaceResult.value);
 
     auto m_PhysicalDevicesResult = m_pInstance->enumeratePhysicalDevices();
     if (m_PhysicalDevicesResult.result != vk::Result::eSuccess) {
-        logger.logMessage("Could not detect a Vulkan supported hardware device!");
+        LOG_F(FATAL, "Could not detect a Vulkan supported hardware device!");
         return false;
     }
     m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
@@ -158,15 +157,15 @@ bool DriverVk::initialize() {
         gpu.id = counter++;
         std::strcpy(gpu.name, properties.deviceName);
         gpu.memory = 0;
-        properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false;
+        gpu.software = properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false;
+
+		LOG_F(INFO, "GPU %i, name: %s, software: %s", gpu.id, gpu.name, gpu.software ? "true" : "false");
         addGpu(gpu);
     }
     return true;
 }
 
 bool DriverVk::selectGpu(uint32_t id) {
-    auto logger = LogManager::getLogger();
-
     // id Does not correlate to a proper GPU.
     if (id >= m_PhysicalDevices.size())
         return false;
@@ -183,7 +182,7 @@ bool DriverVk::selectGpu(uint32_t id) {
             swapchainSupport = true;
 
     if (!swapchainSupport) {
-        logger.logMessage("Hardware device does not support presenting to a surface!");
+        LOG_F(FATAL, "Hardware device does not support presenting to a surface!");
         return false;
     }
 
@@ -231,7 +230,7 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     // Graphics or Surface are not supported.
     if (graphicsSupport.empty() || surfaceSupport.empty()) {
-        logger.logMessage("Hardware device does not support drawing or surface operations!");
+        LOG_F(FATAL, "Hardware device does not support drawing or surface operations!");
         return false;
     } else {
         // Pick first queue family which supports both.
@@ -268,7 +267,7 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     auto deviceResult = m_PhysicalDevices[id].createDeviceUnique(deviceInfo);
     if (deviceResult.result != vk::Result::eSuccess) {
-        logger.logMessage("Failed to create a rendering device!");
+        LOG_F(FATAL, "Failed to create a rendering device!");
         return false;
     }
     if (m_pDevice)
@@ -314,7 +313,7 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     auto swapchainResult = m_pDevice->createSwapchainKHRUnique(swapchainInfo);
     if (swapchainResult.result != vk::Result::eSuccess) {
-        logger.logMessage("Failed to create a swapchain for rendering surface!");
+        LOG_F(FATAL, "Failed to create a swapchain for rendering surface!");
         return false;
     }
     if (m_pSwapchain)
@@ -370,4 +369,22 @@ const vk::UniqueSwapchainKHR& DriverVk::getSwapchain() const {
 const vk::UniqueShaderModule& DriverVk::getModuleFromCache(const char* pFilename) const {
     auto iter = m_pModuleCache.find(pFilename);
     return iter->second;
+}
+
+vk::ResultValue<vk::UniqueShaderModule> DriverVk::getShaderModuleFromFile(const char* pFilename) {
+	const char* pModuleName = std::strcat(const_cast<char*>(pFilename), ".spv");
+	auto file = System::readFile(pModuleName);
+	vk::ShaderModuleCreateInfo moduleInfo;
+	moduleInfo.pCode = reinterpret_cast<const uint32_t*>(file.first);
+	moduleInfo.codeSize = file.second;
+
+	return m_pDevice->createShaderModuleUnique(moduleInfo);
+}
+
+void DriverVk::createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties) {
+	vk::BufferCreateInfo bufferInfo;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
+	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+	
 }

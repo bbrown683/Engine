@@ -22,14 +22,9 @@
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="DriverD3D12.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
-    <ClCompile Include="Font.cpp" />
-    <ClCompile Include="Model.cpp" />
     <ClCompile Include="RenderableD3D12.cpp" />
-    <ClCompile Include="RenderableMesh.cpp" />
-    <ClCompile Include="RenderableSprite.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="DriverVk.cpp" />
     <ClCompile Include="System.cpp" />
@@ -39,20 +34,13 @@
     <ClInclude Include="DriverD3D12.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
-    <ClInclude Include="Font.hpp" />
-    <ClInclude Include="PBRMaterial.hpp" />
-    <ClInclude Include="Model.hpp" />
     <ClInclude Include="Renderable.hpp" />
     <ClInclude Include="RenderableD3D12.hpp" />
-    <ClInclude Include="RenderableMesh.hpp" />
-    <ClInclude Include="RenderableSprite.hpp" />
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
-    <ClInclude Include="LogManager.hpp" />
     <ClInclude Include="System.hpp" />
     <ClInclude Include="ThreadPool.hpp" />
-    <ClInclude Include="Scene.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

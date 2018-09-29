@@ -25,7 +25,7 @@ SOFTWARE.
 #include "Renderer.hpp"
 #include "DriverD3D12.hpp"
 #include "DriverVk.hpp"
-#include "LogManager.hpp"
+#include "thirdparty/loguru.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -37,46 +37,37 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::initialize() {
-    // TODO: If autodetect is enabled, we will need to enumerate 
-    // both drivers and select the best one.
-    auto logger = LogManager::getLogger();
-
 	SDL_Init(SDL_INIT_VIDEO);
 	m_pWindow = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, 
 		SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
 	if (!m_pWindow) {
+		LOG_F(FATAL, "SDL window is invalid!");
 		SDL_Quit();
 		return false;
 	}
 
+	// TODO: If autodetect is enabled, we will need to enumerate 
+	// both drivers and select the best one.
 	if (m_Driver == RendererDriver::eDirect3D12) {
 		m_pDriver = std::make_unique<DriverD3D12>(m_pWindow);
-		logger.logMessage("Direct3D12 driver was selected.");
-	}
-	else if (m_Driver == RendererDriver::eVulkan) {
+		LOG_F(INFO, "Direct3D12 driver was selected.");
+	} else if (m_Driver == RendererDriver::eVulkan) {
 		m_pDriver = std::make_unique<DriverVk>(m_pWindow);
-
-		logger.logMessage("Vulkan driver was selected.");
-	}
-	else
+		LOG_F(INFO, "Vulkan driver was selected.");
+	} else
 		return false;
 
-    if (!m_pWindow) {
-        logger.logMessage("SDL window is invalid!");
-        return false;
-    }
-
     if (!m_pDriver->initialize()) {
-        logger.logMessage("Failed to initialize render driver!");
+        LOG_F(FATAL, "Failed to initialize render driver!");
         return false;
     }
 
     auto gpus = m_pDriver->getGpus();
     if (!m_pDriver->selectGpu(gpus.back().id)) {
-        LOG_MESSAGE("Failed to select GPU for operation!");
+		LOG_F(FATAL, "Failed to select GPU for operation!");
         return false;
     }
-    m_pDriver->presentFrame();
+	m_Running = true;
     return true;
 }
 

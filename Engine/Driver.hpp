@@ -46,11 +46,6 @@ enum class MaxAnisotropy {
     e16x,
 };
 
-enum class RenderableType {
-    Mesh,
-    Font,
-};
-
 struct SDL_Window;
 class Renderable;
 class Driver {

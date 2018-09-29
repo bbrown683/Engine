@@ -24,6 +24,8 @@ SOFTWARE.
 
 #pragma once
 
+#include <vector>
+
 enum class ShaderStage {
     Fragment,
     Geometry,

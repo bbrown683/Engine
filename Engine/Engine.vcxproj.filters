@@ -2,38 +2,26 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Source.cpp" />
-    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="DriverVk.cpp" />
     <ClCompile Include="DriverD3D12.cpp" />
-    <ClCompile Include="RenderableMesh.cpp" />
-    <ClCompile Include="Model.cpp" />
-    <ClCompile Include="Font.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="RenderableD3D12.cpp" />
-    <ClCompile Include="RenderableSprite.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="System.cpp" />
-    <ClCompile Include="LogManager.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
+    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />
     <ClInclude Include="DriverD3D12.hpp" />
-    <ClInclude Include="RenderableMesh.hpp" />
-    <ClInclude Include="Font.hpp" />
-    <ClInclude Include="Model.hpp" />
-    <ClInclude Include="PBRMaterial.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="Renderable.hpp" />
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="RenderableD3D12.hpp" />
-    <ClInclude Include="RenderableSprite.hpp" />
-    <ClInclude Include="Scene.hpp" />
     <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="System.hpp" />
-    <ClInclude Include="LogManager.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
+    <ClInclude Include="Renderer.hpp" />
   </ItemGroup>
 </Project>
