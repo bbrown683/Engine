@@ -23,5 +23,6 @@
     <ClInclude Include="System.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
     <ClInclude Include="Renderer.hpp" />
+    <ClInclude Include="GameConfig.hpp" />
   </ItemGroup>
 </Project>

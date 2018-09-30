@@ -22,6 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+/// Note:
+/// Vsync: Lock fps on double buffering.
+/// Non-vsync double buffering: Unlocked double buffering.
+/// Triple buffering: Vsync with an additional buffer.
+
 #pragma once
 
 #include <cstdint>
@@ -33,9 +38,17 @@ SOFTWARE.
 
 struct Gpu {
     uint32_t id;
+	uint32_t vendorId;
+	uint32_t deviceId;
     char name[256];
     uint32_t memory;
     bool software;
+};
+
+struct DisplayMode {
+	uint32_t width;
+	uint32_t height;
+	uint32_t refreshRate;
 };
 
 enum class MaxAnisotropy {

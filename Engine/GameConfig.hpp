@@ -22,43 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <vector>
+#pragma once
 
-#include "EngineRenderer.hpp"
+enum class Quality {
+	eLow,
+	eMedium,
+	eHigh,
+	eUltra,
+};
 
-#pragma warning(push)
-#pragma warning(disable : 4018)
-#pragma warning(disable : 4996)
-#define LOGURU_IMPLEMENTATION 1
-#include "thirdparty/loguru.hpp"
-#pragma warning(pop)
-#define STB_IMAGE_IMPLEMENTATION 1
-#include "thirdparty/stb_image.h"
-#define STB_TRUETYPE_IMPLEMENTATION 1
-#include "thirdparty/stb_truetype.h"
-#define TINYOBJLOADER_IMPLEMENTATION 1
-#include "thirdparty/tiny_obj_loader.h"
+enum class TextureFiltering {
+	eNone,
+	e2x,
+	e4x,
+	e8x,
+	e16x
+};
 
-int main(int argc, char** argv) {
-	loguru::init(argc, argv);
+enum class WindowMode {
+	eWindowed,
+	eFullscreen,
+	eWindowedFullscreen,
+};
 
-#ifndef _DEBUG
-	loguru::add_file("runtime.log", loguru::Truncate, loguru::Verbosity_MAX);
-#endif
+class GameConfig {
+public:
+	bool setAudioMasterVolume(int volume);
+	bool setGraphicsVsync(bool vsync);
+	bool setGraphicsTripleBuffering(bool tripleBuffering);
+	bool setGraphicsTextureQuality(Quality textureQuality);
+	bool setGraphicsTextureFiltering(TextureFiltering textureFiltering);
+	bool setWindowWidth(int width);
+	bool setWindowHeight(int height);
+	bool setWindowMode(WindowMode mode);
+private:
+	bool writeConfig();
 
-	std::vector<const char*> args;
-	args.insert(args.begin(), argv, argv + argc);
-	RendererDriver driver = RendererDriver::eAutodetect;
-	for (const char* arg : args) {
-		if (std::strcmp(arg, "--d3d12") == 0)
-			driver = RendererDriver::eDirect3D12;
-		if (std::strcmp(arg, "--vulkan") == 0)
-			driver = RendererDriver::eVulkan;
-	}
-
-	EngineRenderer engine(driver);
-	if (!engine.initialize())
-		return false;
-
-	return engine.executeEventLoop();
-}
+	const char* configFile = "settings.cfg";
+};

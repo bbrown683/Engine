@@ -39,24 +39,29 @@ bool DriverVk::initialize() {
     if (extensionPropertiesResult.result == vk::Result::eSuccess)
         extensionProperties = extensionPropertiesResult.value;
 
-    bool surfaceKHRSupport = false, wmKHRSupport = false;
+	bool displayKHRSupport = false, surfaceKHRSupport = false, wmKHRSupport = false;
     for (vk::ExtensionProperties extension : extensionProperties) {
-        if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME))
+		if (strcmp(extension.extensionName, VK_KHR_DISPLAY_EXTENSION_NAME) == 0)
+			displayKHRSupport = true;
+		if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME) == 0)
             surfaceKHRSupport = true;
         if (strcmp(extension.extensionName,
 #ifdef VK_USE_PLATFORM_MIR_KHR
-            VK_KHR_MIR_SURFACE_EXTENSION_NAME))
+            VK_KHR_MIR_SURFACE_EXTENSION_NAME) == 0)
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-            VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME))
+            VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME) == 0)
 #elif defined(VK_USE_PLATFORM_WIN32_KHR)
-            VK_KHR_WIN32_SURFACE_EXTENSION_NAME))
+            VK_KHR_WIN32_SURFACE_EXTENSION_NAME) == 0)
 #elif defined(VK_USE_PLATFORM_XLIB_KHR)
-            VK_KHR_XLIB_SURFACE_EXTENSION_NAME))
+            VK_KHR_XLIB_SURFACE_EXTENSION_NAME) == 0)
 #endif
             wmKHRSupport = true;
     }
-
-    if (!surfaceKHRSupport || !wmKHRSupport) {
+	/*
+	if (!displayKHRSupport) {
+		LOG_F(FATAL, "Vulkan driver does not support rendering to a display.");
+		return false;
+	} else*/ if (!surfaceKHRSupport || !wmKHRSupport) {
         LOG_F(FATAL, "Vulkan driver does not support rendering to a surface!");
         return false;
     }
@@ -77,6 +82,7 @@ bool DriverVk::initialize() {
     instanceLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 #endif
 
+	//instanceExtensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
     instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
     SDL_SysWMinfo wmInfo;
@@ -106,7 +112,7 @@ bool DriverVk::initialize() {
 
     auto instanceResult = vk::createInstanceUnique(instanceInfo);
     if (instanceResult.result != vk::Result::eSuccess) {
-		LOG_F(FATAL, "A Vulkan driver was not detected!");
+		LOG_F(FATAL, "Vulkan instance could not be created!");
         return false;
     }
     m_pInstance.swap(instanceResult.value);
@@ -149,6 +155,7 @@ bool DriverVk::initialize() {
     }
     m_PhysicalDevices.swap(m_PhysicalDevicesResult.value);
 
+	LOG_F(INFO, "Enumerating Physical Devices:");
     uint32_t counter = 0;
     for (vk::PhysicalDevice physicalDevice : m_PhysicalDevices) {
         vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
@@ -156,13 +163,18 @@ bool DriverVk::initialize() {
         Gpu gpu;
         gpu.id = counter++;
         std::strcpy(gpu.name, properties.deviceName);
-        gpu.memory = 0;
+		gpu.vendorId = properties.vendorID;
+		gpu.deviceId = properties.deviceID;
+        gpu.memory = properties.limits.maxMemoryAllocationCount;
         gpu.software = properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false;
-
-		LOG_F(INFO, "GPU %i, name: %s, software: %s", gpu.id, gpu.name, gpu.software ? "true" : "false");
-        addGpu(gpu);
+		
+		LOG_F(INFO, "\t[%u]: %s", gpu.id, gpu.name);
+		LOG_F(INFO, "\t\tVideoMemory: %u", gpu.memory);
+		LOG_F(INFO, "\t\tVendorId: %u", gpu.vendorId);
+		LOG_F(INFO, "\t\tDeviceId: %u", gpu.deviceId);
+		addGpu(gpu);
     }
-    return true;
+    return !m_PhysicalDevices.empty();
 }
 
 bool DriverVk::selectGpu(uint32_t id) {
@@ -176,12 +188,13 @@ bool DriverVk::selectGpu(uint32_t id) {
         deviceExtensions = deviceExtensionsResult.value;
 
     // Check for VK_KHR_swapchain extension.
-    bool swapchainSupport = false;
-    for (vk::ExtensionProperties deviceExtension : deviceExtensions)
-        if (std::strcmp(deviceExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
-            swapchainSupport = true;
+    bool swapchainKHRSupport = false;
+	for (vk::ExtensionProperties deviceExtension : deviceExtensions) {
+		if (std::strcmp(deviceExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
+			swapchainKHRSupport = true;
+	}
 
-    if (!swapchainSupport) {
+    if (!swapchainKHRSupport) {
         LOG_F(FATAL, "Hardware device does not support presenting to a surface!");
         return false;
     }
@@ -287,11 +300,11 @@ bool DriverVk::selectGpu(uint32_t id) {
 
     // Check to see if the driver lets us select which one we want.
     if (surfaceFormats.size() == 1 && surfaceFormats[0].format == vk::Format::eUndefined)
-        format = vk::Format::eR8G8B8A8Unorm;
+        format = vk::Format::eB8G8R8A8Srgb;
     else {
         // Iterate through each format and check to see if it has the format we want.
         for (vk::SurfaceFormatKHR surfaceFormat : surfaceFormats)
-            if (surfaceFormat.format == vk::Format::eR8G8B8A8Unorm)
+            if (surfaceFormat.format == vk::Format::eB8G8R8A8Srgb)
                 format = surfaceFormat.format;
         // If we still didnt find a format just pick the first one we get.
         if (format == vk::Format::eUndefined)

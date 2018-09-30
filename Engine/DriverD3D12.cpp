@@ -23,11 +23,15 @@ SOFTWARE.
 */
 
 #include "DriverD3D12.hpp"
-#include "RenderableD3D12.hpp"
 
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
+
+#include "thirdparty/d3dx12.h"
+#include "thirdparty/loguru.hpp"
+
+#include "RenderableD3D12.hpp"
 
 DriverD3D12::DriverD3D12(const SDL_Window* pWindow) : Driver(pWindow) {}
 
@@ -41,29 +45,36 @@ bool DriverD3D12::initialize() {
 
     if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pGpuDebug))))
         return false;
-    //m_pGpuDebug->EnableDebugLayer();
-    //m_pGpuDebug->SetEnableGPUBasedValidation(true);
+    m_pGpuDebug->EnableDebugLayer();
+    m_pGpuDebug->SetEnableGPUBasedValidation(true);
 #endif
     // Create the factory which will be used for our swapchain later.
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))))
         return false;
 
+	LOG_F(INFO, "Enumerating Adapters:");
     // Enumerate each GPU or software rasterizer found on the system.
     // These will be used to select a GPU to render with.
     IDXGIAdapter1* pAdapter;
     for (UINT i = 0; m_pFactory->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; i++) {
         DXGI_ADAPTER_DESC1 adapterDesc;
-        pAdapter->GetDesc1(&adapterDesc);
+		pAdapter->GetDesc1(&adapterDesc);
 
-        Gpu gpu;
-        gpu.id = static_cast<uint32_t>(i);
-        gpu.memory = static_cast<uint32_t>(adapterDesc.DedicatedVideoMemory);
-        gpu.software = adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE ? true : false;
-        size_t length = std::wcstombs(gpu.name, adapterDesc.Description, 256);
-        if (length != -1)
-            gpu.name[length] = '\0';
-        addGpu(gpu);
-        m_pAdapters.push_back(std::move(pAdapter));
+		Gpu gpu;
+		gpu.id = static_cast<uint32_t>(i);
+		gpu.vendorId = adapterDesc.VendorId;
+		gpu.deviceId = adapterDesc.DeviceId;
+		gpu.memory = static_cast<uint32_t>(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
+		gpu.software = adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE ? true : false;
+		size_t length = std::wcstombs(gpu.name, adapterDesc.Description, 256);
+		if (length != -1)
+			gpu.name[length] = '\0';
+		LOG_F(INFO, "\t[%u]: %s", gpu.id, gpu.name);
+		LOG_F(INFO, "\t\tVideoMemory: %uMB ", gpu.memory);
+		LOG_F(INFO, "\t\tVendorId: %u", gpu.vendorId);
+		LOG_F(INFO, "\t\tDeviceId: %u", gpu.deviceId);
+		addGpu(gpu);
+		m_pAdapters.push_back(std::move(pAdapter));
     }
     return !m_pAdapters.empty();
 }
@@ -74,18 +85,51 @@ bool DriverD3D12::selectGpu(uint32_t id) {
         return false;
 
     // Create the device which is attached to the GPU.
-    if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice))))
-        return false;
-
+	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice)))) {
+		LOG_F(FATAL, "Could not create D3D12 rendering device.");
+		return false;
+	}
+        
     // Create a queue for passing our command lists to.
     D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-    if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pPrimaryCommandQueue))))
-        return false;
+	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pPrimaryCommandQueue)))) {
+		LOG_F(FATAL, "Could not create D3D12 command queue.");
+		return false;
+	}
+
+	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
+		LOG_F(FATAL, "Could not create D3D12 command allocator.");
+		return false;
+	}
+        
+	LOG_F(INFO, "Enumerating Displays:");
+	IDXGIOutput* pOutput;
+	for (UINT i = 0; m_pAdapters[id]->EnumOutputs(i, &pOutput) != DXGI_ERROR_NOT_FOUND; i++) {
+		DXGI_OUTPUT_DESC outputDesc;
+		pOutput->GetDesc(&outputDesc);
+
+		char monitorName[32];
+		size_t length = std::wcstombs(monitorName, outputDesc.DeviceName, 32);
+		if (length != -1)
+			monitorName[length] = '\0';
+		LOG_F(INFO, "\tDisplay Modes for %s", monitorName);
+
+		UINT numDisplayModes;
+		pOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numDisplayModes, nullptr);
+
+		std::vector<DXGI_MODE_DESC> modes(numDisplayModes);
+		pOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numDisplayModes, modes.data());
+		for (DXGI_MODE_DESC mode : modes) {
+			LOG_F(INFO, "\t\t%ux%u %dHz ", mode.Width, mode.Height, mode.RefreshRate.Numerator / mode.RefreshRate.Denominator);
+		}
+	}
 
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
     swapchainDesc.BufferCount = 3;
-    swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapchainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapchainDesc.SampleDesc.Count = 1;
@@ -98,6 +142,22 @@ bool DriverD3D12::selectGpu(uint32_t id) {
     if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pPrimaryCommandQueue.Get(), wmInfo.info.win.window,
         &swapchainDesc, nullptr, nullptr, m_pSwapchain.GetAddressOf())))
         return false;
+
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc {};
+	descriptorHeapDesc.NumDescriptors = 3;
+	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	if(FAILED(m_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_pDescriptorHeap))))
+		return false;
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+	UINT heapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	m_pRenderTargets.resize(3);
+	for (UINT i = 0; i < 3; i++) {
+		m_pSwapchain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]));
+		m_pDevice->CreateRenderTargetView(m_pRenderTargets[i].Get(), nullptr, destDescriptor);
+		destDescriptor.Offset(1, heapSize);
+	}
     return true;
 }
 

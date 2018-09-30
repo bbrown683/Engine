@@ -58,11 +58,8 @@ public:
     const vk::UniqueCommandBuffer& getPrimaryCommandBuffer() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;
     const vk::UniqueShaderModule& getModuleFromCache(const char* pFilename) const;
-
-	// Helper methods.
 	vk::ResultValue<vk::UniqueShaderModule> getShaderModuleFromFile(const char* pFilename);
 	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties);
-
 private:
     vk::UniqueInstance m_pInstance;
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;

@@ -34,6 +34,7 @@
     <ClInclude Include="DriverD3D12.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
+    <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="Renderable.hpp" />
     <ClInclude Include="RenderableD3D12.hpp" />
     <ClInclude Include="RenderableVk.hpp" />

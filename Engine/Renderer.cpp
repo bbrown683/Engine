@@ -63,7 +63,7 @@ bool Renderer::initialize() {
     }
 
     auto gpus = m_pDriver->getGpus();
-    if (!m_pDriver->selectGpu(gpus.back().id)) {
+    if (!m_pDriver->selectGpu(gpus.front().id)) {
 		LOG_F(FATAL, "Failed to select GPU for operation!");
         return false;
     }

@@ -86,6 +86,12 @@ public:
     /// double or triple buffering depending on the backend driver implementation.
     void setVsync(bool state);
 
+	/// Returns the current state of triple buffering for the renderer.
+	bool getTripleBuffering();
+
+	// Sets the current state of triple buffering for the renderer.
+	void setTripleBuffering(bool state);
+
     /// Returns the currently applied texture filtering for the renderer.
     TextureFiltering getTextureFiltering();
 
