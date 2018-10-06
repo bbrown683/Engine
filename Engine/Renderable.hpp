@@ -28,9 +28,6 @@ SOFTWARE.
 
 enum class ShaderStage {
     Fragment,
-    Geometry,
-    TesselationEvaluation,
-    TesselationControl,
     Vertex,
 };
 

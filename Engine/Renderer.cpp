@@ -68,6 +68,8 @@ bool Renderer::initialize() {
         return false;
     }
 	m_Running = true;
+	m_pDriver->prepareFrame();
+	m_pDriver->presentFrame();
     return true;
 }
 
@@ -80,14 +82,6 @@ bool Renderer::setRendererDriver(RendererDriver driver) {
         m_pDriver.reset();
     }
     return false;
-}
-
-bool Renderer::getVsync() {
-    return m_Vsync;
-}
-
-void Renderer::setTextureFiltering(TextureFiltering textureFiltering) {
-    m_TextureFiltering = textureFiltering;
 }
 
 void Renderer::onKeyPress() {}
@@ -111,8 +105,4 @@ int Renderer::executeEventLoop() {
 
 void Renderer::shutdown() {
 	m_Running = false;
-}
-
-TextureFiltering Renderer::getTextureFiltering() {
-    return m_TextureFiltering;
 }

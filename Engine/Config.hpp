@@ -36,7 +36,7 @@ enum class TextureFiltering {
 	e2x,
 	e4x,
 	e8x,
-	e16x
+	e16x,
 };
 
 enum class WindowMode {
@@ -45,18 +45,30 @@ enum class WindowMode {
 	eWindowedFullscreen,
 };
 
-class GameConfig {
+class Config {
 public:
-	bool setAudioMasterVolume(int volume);
-	bool setGraphicsVsync(bool vsync);
-	bool setGraphicsTripleBuffering(bool tripleBuffering);
-	bool setGraphicsTextureQuality(Quality textureQuality);
-	bool setGraphicsTextureFiltering(TextureFiltering textureFiltering);
-	bool setWindowWidth(int width);
-	bool setWindowHeight(int height);
-	bool setWindowMode(WindowMode mode);
+	void setAudioMasterVolume(int volume);
+	int getAudioMasterVolume();
+	void setGraphicsVsync(bool vsync);
+	bool getGraphicsVsync();
+	void setGraphicsTripleBuffering(bool tripleBuffering);
+	bool getGraphicsTripleBuffering();
+	void setGraphicsTextureQuality(Quality textureQuality);
+	Quality getGraphicsTextureQuality();
+	void setGraphicsTextureFiltering(TextureFiltering textureFiltering);
+	TextureFiltering getGraphicsTextureFiltering();
+	void setWindowWidth(int width);
+	int getWindowWidth();
+	void setWindowHeight(int height);
+	int getWindowHeight();
+	void setWindowMode(WindowMode mode);
+	WindowMode getWindowMode();
 private:
-	bool writeConfig();
-
-	const char* configFile = "settings.cfg";
+	int volume;
+	bool vsync;
+	bool tripleBuffering;
+	Quality textureQuality;
+	TextureFiltering textureFiltering;
+	int windowWidth, windowHeight;
+	WindowMode windowMode;
 };

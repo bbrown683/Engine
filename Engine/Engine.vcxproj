@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="DriverD3D12.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
@@ -31,10 +32,10 @@
     <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Config.hpp" />
     <ClInclude Include="DriverD3D12.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
-    <ClInclude Include="GameConfig.hpp" />
     <ClInclude Include="Renderable.hpp" />
     <ClInclude Include="RenderableD3D12.hpp" />
     <ClInclude Include="RenderableVk.hpp" />

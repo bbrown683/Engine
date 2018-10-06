@@ -51,6 +51,12 @@ struct DisplayMode {
 	uint32_t refreshRate;
 };
 
+struct Display {
+	uint32_t id;
+	char name[32];
+	std::vector<DisplayMode> modes;
+};
+
 enum class MaxAnisotropy {
     eNone,
     e2x,
@@ -79,13 +85,13 @@ public:
     /// Gpu and see if it succeeds otherwise.
     virtual bool selectGpu(uint32_t id) = 0;
 
+	/// Prepares the frame for presentation.
+	virtual bool prepareFrame() = 0;
+
     /// Submits all of the gathered command buffers/lists to the GPU for execution.
     /// This call will block until all GPU execution has completed. Will present
     /// all information executed in the queue to the swapchain for presentation.
     virtual bool presentFrame() = 0;
-
-    /// Returns the maximum supported Anisotropy level by the driver.
-    MaxAnisotropy getMaxAnisotropy();
 
     /// Returns a list of all GPUs along with information about each one of them.
     /// id - The identifier of this GPU.
@@ -95,7 +101,6 @@ public:
     const std::vector<Gpu>& getGpus();
 protected:
     const SDL_Window* getWindow();
-    void setMaxAnisotropy(MaxAnisotropy anisotropyLevel);
     void addGpu(Gpu gpu);
     uint32_t getThreadCount();
     ThreadPool* getThreadPool();
@@ -108,7 +113,6 @@ protected:
     virtual std::unique_ptr<Renderable> createRenderable() = 0;
 private:
     const SDL_Window* m_pWindow;
-    MaxAnisotropy m_MaxAnisotropy;
     std::vector<Gpu> m_Gpus;
     uint32_t m_ThreadCount;
     std::unique_ptr<ThreadPool> m_ThreadPool;

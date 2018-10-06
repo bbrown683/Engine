@@ -42,8 +42,11 @@ public:
     bool attachShader(const char* pFilename, ShaderStage stage) override;
     bool setIndexBuffer(std::vector<uint16_t> indices) override;
     bool setVertexBuffer(std::vector<uint32_t> vertices) override;
+
+	const ComPtr<ID3D12GraphicsCommandList>& getBundle() const;
 private:
     DriverD3D12* m_pDriver;
-    ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
-    std::vector<ComPtr<ID3DBlob>> m_pBlobs;
+	ComPtr<ID3D12GraphicsCommandList> m_pBundle;
+	ComPtr<ID3DBlob> m_pVertexShader;
+	ComPtr<ID3DBlob> m_pPixelShader; 
 };

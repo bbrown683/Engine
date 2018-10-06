@@ -34,18 +34,13 @@ bool RenderableVk::execute() {
 }
 
 bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
-	auto moduleResult = m_pDriver->getShaderModuleFromFile(pFilename);
-    if (moduleResult.result != vk::Result::eSuccess)
-        return false;
+	vk::UniqueShaderModule module = m_pDriver->getShaderModuleFromFile(pFilename);
 
     vk::PipelineShaderStageCreateInfo shaderStageInfo;
-    shaderStageInfo.module = moduleResult.value.get();
+    shaderStageInfo.module = module.get();
     shaderStageInfo.pName = "main";
     switch (stage) {
     case ShaderStage::Fragment: shaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment; break;
-    case ShaderStage::Geometry: shaderStageInfo.stage = vk::ShaderStageFlagBits::eGeometry; break;
-    case ShaderStage::TesselationControl: shaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationControl; break;
-    case ShaderStage::TesselationEvaluation: shaderStageInfo.stage = vk::ShaderStageFlagBits::eTessellationEvaluation; break;
     case ShaderStage::Vertex: shaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
     }
     m_ShaderStages.push_back(std::move(shaderStageInfo));

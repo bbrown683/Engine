@@ -39,32 +39,38 @@ using namespace Microsoft::WRL;
 class DriverD3D12 : public Driver {
 public:
     DriverD3D12(const SDL_Window* pWindow);
+	~DriverD3D12();
 
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint32_t id) override;
+	bool prepareFrame() override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable() override;
     const ComPtr<ID3D12Device>& getDevice() const;
-    const ComPtr<ID3D12CommandList>& getPrimaryCommandList() const;
-    const ComPtr<ID3DBlob>& getBlobFromCache(const char* pFilename);
+	const ComPtr<ID3D12GraphicsCommandList>& getCommandList() const;
+	const ComPtr<ID3D12CommandAllocator>& getCommandAllocator() const;
+	const ComPtr<ID3D12RootSignature>& getRootSignature() const;
 private:
 #ifdef _DEBUG
     ComPtr<IDXGIDebug1> m_pCpuDebug;
     ComPtr<ID3D12Debug1> m_pGpuDebug;
 #endif
+	ComPtr<IDXGIFactory5> m_pFactory;
     ComPtr<ID3D12Device> m_pDevice;
-    ComPtr<ID3D12CommandQueue> m_pPrimaryCommandQueue;
+	std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
+	ComPtr<IDXGISwapChain3> m_pSwapchain;
+    ComPtr<ID3D12CommandQueue> m_pCommandQueue;
 	ComPtr<ID3D12CommandAllocator> m_pCommandAllocator;
-    ComPtr<ID3D12CommandList> m_pPrimaryCommandList;
+	ComPtr<ID3D12RootSignature> m_pRootSignature;
 	ComPtr<ID3D12DescriptorHeap> m_pDescriptorHeap;
 	std::vector<ComPtr<ID3D12Resource>> m_pRenderTargets;
-    std::vector<ComPtr<ID3D12CommandQueue>> m_pCommandQueueBundles;
-    std::vector<ComPtr<ID3D12GraphicsCommandList>> m_pCommandListBundles;
-    ComPtr<ID3D12Fence> m_pFence;
-    ComPtr<IDXGIFactory5> m_pFactory;
-    std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
-    ComPtr<IDXGISwapChain1> m_pSwapchain;
-    ComPtr<ID3D12RootSignature> m_pRootSignature;
-    std::unordered_map<const char*, ComPtr<ID3DBlob>> m_pBlobCache;
+	D3D12_VIEWPORT m_Viewport;
+	ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
+	ComPtr<ID3D12Fence> m_pFence;
+	HANDLE m_pFenceEvent;
+	UINT m_FenceValue;
+	UINT m_FrameIndex; 
+	UINT m_HeapSize;
+	UINT m_NumBuffers;
 };

@@ -45,12 +45,10 @@ enum class WindowMode {
 
 enum class TextureFiltering {
     eNone,
-    eBilinear,
-    eTrilinear,
-    eAniso2x,
-    eAniso4x,
-    eAniso8x,
-    eAniso16x,
+    e2x,
+    e4x,
+    e8x,
+    e16x,
 };
 
 struct SDL_Window;
@@ -79,25 +77,6 @@ public:
     /// new driver.
     bool setRendererDriver(RendererDriver driver);
 
-    /// Returns the current state of Vsync for the renderer. 
-    bool getVsync();
-
-    /// Sets the current state of Vsync for the renderer. This can be in the form of either
-    /// double or triple buffering depending on the backend driver implementation.
-    void setVsync(bool state);
-
-	/// Returns the current state of triple buffering for the renderer.
-	bool getTripleBuffering();
-
-	// Sets the current state of triple buffering for the renderer.
-	void setTripleBuffering(bool state);
-
-    /// Returns the currently applied texture filtering for the renderer.
-    TextureFiltering getTextureFiltering();
-
-    /// 
-    void setTextureFiltering(TextureFiltering textureFiltering);
-
     /// 
     virtual void onKeyPress();
 
@@ -112,6 +91,4 @@ private:
 	bool m_Running;
     std::unique_ptr<Driver> m_pDriver;
     RendererDriver m_Driver;
-    bool m_Vsync;
-    TextureFiltering m_TextureFiltering;
 };

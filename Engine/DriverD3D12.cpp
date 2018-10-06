@@ -33,7 +33,16 @@ SOFTWARE.
 
 #include "RenderableD3D12.hpp"
 
-DriverD3D12::DriverD3D12(const SDL_Window* pWindow) : Driver(pWindow) {}
+DriverD3D12::DriverD3D12(const SDL_Window* pWindow) : Driver(pWindow) {
+	m_FrameIndex = 0;
+	m_HeapSize = 0;
+	m_NumBuffers = 2;
+	m_pRenderTargets = std::vector<ComPtr<ID3D12Resource>>(m_NumBuffers);
+}
+
+DriverD3D12::~DriverD3D12() {
+	CloseHandle(m_pFenceEvent);
+}
 
 bool DriverD3D12::initialize() {
     // Enable debug layer for D3D12 and DXGI.
@@ -85,50 +94,14 @@ bool DriverD3D12::selectGpu(uint32_t id) {
         return false;
 
     // Create the device which is attached to the GPU.
-	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice)))) {
+	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDevice)))) {
 		LOG_F(FATAL, "Could not create D3D12 rendering device.");
 		return false;
 	}
         
-    // Create a queue for passing our command lists to.
-    D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pPrimaryCommandQueue)))) {
-		LOG_F(FATAL, "Could not create D3D12 command queue.");
-		return false;
-	}
-
-	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
-		LOG_F(FATAL, "Could not create D3D12 command allocator.");
-		return false;
-	}
-        
-	LOG_F(INFO, "Enumerating Displays:");
-	IDXGIOutput* pOutput;
-	for (UINT i = 0; m_pAdapters[id]->EnumOutputs(i, &pOutput) != DXGI_ERROR_NOT_FOUND; i++) {
-		DXGI_OUTPUT_DESC outputDesc;
-		pOutput->GetDesc(&outputDesc);
-
-		char monitorName[32];
-		size_t length = std::wcstombs(monitorName, outputDesc.DeviceName, 32);
-		if (length != -1)
-			monitorName[length] = '\0';
-		LOG_F(INFO, "\tDisplay Modes for %s", monitorName);
-
-		UINT numDisplayModes;
-		pOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numDisplayModes, nullptr);
-
-		std::vector<DXGI_MODE_DESC> modes(numDisplayModes);
-		pOutput->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numDisplayModes, modes.data());
-		for (DXGI_MODE_DESC mode : modes) {
-			LOG_F(INFO, "\t\t%ux%u %dHz ", mode.Width, mode.Height, mode.RefreshRate.Numerator / mode.RefreshRate.Denominator);
-		}
-	}
-
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
-    swapchainDesc.BufferCount = 3;
+    swapchainDesc.BufferCount = m_NumBuffers;
     swapchainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
@@ -139,45 +112,124 @@ bool DriverD3D12::selectGpu(uint32_t id) {
     if (!SDL_GetWindowWMInfo(const_cast<SDL_Window*>(getWindow()), &wmInfo))
         return false;
 
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pPrimaryCommandQueue.Get(), wmInfo.info.win.window,
-        &swapchainDesc, nullptr, nullptr, m_pSwapchain.GetAddressOf())))
+	ComPtr<IDXGISwapChain1> pSwapchain;
+    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), wmInfo.info.win.window,
+        &swapchainDesc, nullptr, nullptr, pSwapchain.GetAddressOf())))
         return false;
+	pSwapchain.As(&m_pSwapchain);
+	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
+
+	// Create a queue for passing our command lists to.
+	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue)))) {
+		LOG_F(FATAL, "Could not create D3D12 command queue.");
+		return false;
+	}
+
+	// Create a queue to allocate our command lists.
+	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
+		LOG_F(FATAL, "Could not create D3D12 command allocator.");
+		return false;
+	}
 
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc {};
-	descriptorHeapDesc.NumDescriptors = 3;
+	descriptorHeapDesc.NumDescriptors = m_NumBuffers;
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	if(FAILED(m_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_pDescriptorHeap))))
 		return false;
 
+	// Configure the descriptor for CPU memory data.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-	UINT heapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	m_pRenderTargets.resize(3);
-	for (UINT i = 0; i < 3; i++) {
+	m_HeapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	for (UINT i = 0; i < m_NumBuffers; i++) {
 		m_pSwapchain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]));
 		m_pDevice->CreateRenderTargetView(m_pRenderTargets[i].Get(), nullptr, destDescriptor);
-		destDescriptor.Offset(1, heapSize);
+		destDescriptor.Offset(1, m_HeapSize);
 	}
-    return true;
+
+	// Initialize the root signature.
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	
+	// Compile and create root signature.
+	ComPtr<ID3DBlob> pSignature;
+	ComPtr<ID3DBlob> pError;
+	if(FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &pSignature, &pError)))
+		return false;
+	if(FAILED(m_pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature))))
+		return false;  
+
+	// Set viewport.
+	m_Viewport.TopLeftX = 0.0f;
+	m_Viewport.TopLeftY = 0.0f;
+	int width, height;
+	SDL_GetWindowSize(const_cast<SDL_Window*>(getWindow()), &width, &height);
+	m_Viewport.Width = static_cast<float>(width);
+	m_Viewport.Height = static_cast<float>(height);
+
+	if(FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
+		return false;
+
+	m_FenceValue = 1;
+	// Create an event handle to use for frame synchronization.
+	m_pFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (m_pFenceEvent == nullptr) {
+		if (FAILED(HRESULT_FROM_WIN32(GetLastError())))
+			return false;
+	}
+	return true;
+}
+
+bool DriverD3D12::prepareFrame() {
+	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
+		return false;
+
+	// Set typical command list state.
+	m_pCommandList->SetGraphicsRootSignature(m_pRootSignature.Get());
+	m_pCommandList->RSSetViewports(1, &m_Viewport);
+
+	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	// Grab handle to our descriptor.
+	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_HeapSize);
+	m_pCommandList->OMSetRenderTargets(1, &descriptorHandle, false, nullptr);
+
+	const float clearColor[] = { 0.1f, 0.3f, 0.5f, 1.0f };
+	m_pCommandList->ClearRenderTargetView(descriptorHandle, clearColor, 0, nullptr);
+	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_PRESENT));
+
+	m_pCommandList->Close();
+	return true;
 }
 
 bool DriverD3D12::presentFrame() {
-    /*
-    if (FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
-        return false;
+	std::vector<ID3D12CommandList*> commandLists = { m_pCommandList.Get() };
+	m_pCommandQueue->ExecuteCommandLists(commandLists.size(), commandLists.data());
 
-    // Execute the primary command list.
-    m_pPrimaryCommandQueue->ExecuteCommandLists(1, &m_pPrimaryCommandList);
- 
-    // Wait for command queue to complete submission to GPU.
-    m_pPrimaryCommandQueue->Wait(m_pFence.Get(), UINT64_MAX);
-    if (FAILED(m_pSwapchain->Present1(1, 0, nullptr)))
-        return false;
-    m_pFence.Reset();
-    */
-    return true;
+	m_pSwapchain->Present(1, 0);
+
+	// Signal and increment the fence value.
+	const UINT64 fenceValue = m_FenceValue;
+	m_pCommandQueue->Signal(m_pFence.Get(), fenceValue);
+	m_FenceValue++;
+
+	// Wait until the previous frame is finished.
+	if (m_pFence->GetCompletedValue() < fenceValue) {
+		m_pFence->SetEventOnCompletion(fenceValue, m_pFenceEvent);
+		WaitForSingleObject(m_pFenceEvent, INFINITE);
+	}
+
+	// Update frame index after we are done presenting.
+	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
+	return true;
 }
-
+	
 std::unique_ptr<Renderable> DriverD3D12::createRenderable() {
     return std::make_unique<RenderableD3D12>(this);
 }
@@ -186,11 +238,14 @@ const ComPtr<ID3D12Device>& DriverD3D12::getDevice() const {
     return m_pDevice;
 }
 
-const ComPtr<ID3D12CommandList>& DriverD3D12::getPrimaryCommandList() const {
-    return m_pPrimaryCommandList;
+const ComPtr<ID3D12GraphicsCommandList>& DriverD3D12::getCommandList() const {
+	return m_pCommandList;
 }
 
-const ComPtr<ID3DBlob>& DriverD3D12::getBlobFromCache(const char* pFilename) {
-    auto iter = m_pBlobCache.find(pFilename);
-    return iter->second;
+const ComPtr<ID3D12CommandAllocator>& DriverD3D12::getCommandAllocator() const {
+	return m_pCommandAllocator;
+}
+
+const ComPtr<ID3D12RootSignature>& DriverD3D12::getRootSignature() const {
+	return m_pRootSignature;
 }

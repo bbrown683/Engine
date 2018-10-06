@@ -25,10 +25,34 @@ SOFTWARE.
 #include "RenderableD3D12.hpp"
 
 #include "DriverD3D12.hpp"
+#include "thirdparty/d3dx12.h"
 
-RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {}
+RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {
+	//if(FAILED(m_pDriver->getDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE,
+	//	m_pDriver->getCommandAllocator().Get(), nullptr, IID_PPV_ARGS(&m_pBundle))));
+}
 
 bool RenderableD3D12::execute() {
+	// Define the vertex input layout.
+	std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	};
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+	psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
+	psoDesc.pRootSignature = m_pDriver->getRootSignature().Get();
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_pVertexShader.Get());
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(m_pPixelShader.Get());
+	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	psoDesc.DepthStencilState.DepthEnable = FALSE;
+	psoDesc.DepthStencilState.StencilEnable = FALSE;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_B8G8R8A8_UNORM;
+	psoDesc.SampleDesc.Count = 1;
 	return false;
 }
 
@@ -37,9 +61,6 @@ bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
     const char* target;
     switch (stage) {
     case ShaderStage::Fragment: target = "ps_5_0"; break;
-    case ShaderStage::Geometry: target = "gs_5_0"; break;
-    case ShaderStage::TesselationControl: target = "hs_5_0"; break;
-    case ShaderStage::TesselationEvaluation: target = "ds_5_0"; break;
     case ShaderStage::Vertex: target = "vs_5_0"; break;
     }
     wchar_t pBlobNameWide[64];
@@ -50,7 +71,7 @@ bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
     ID3DBlob* pBlob;
     if (FAILED(D3DReadFileToBlob(pBlobNameWide, &pBlob)))
         return false;
-    m_pBlobs.push_back(std::move(pBlob));
+
     return true;
 }
 
@@ -60,4 +81,8 @@ bool RenderableD3D12::setIndexBuffer(std::vector<uint16_t> indices) {
 
 bool RenderableD3D12::setVertexBuffer(std::vector<uint32_t> vertices) {
     return false;
+}
+
+const ComPtr<ID3D12GraphicsCommandList>& RenderableD3D12::getBundle() const {
+	return m_pBundle;
 }

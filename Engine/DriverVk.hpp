@@ -40,25 +40,26 @@ SOFTWARE.
 #define VK_USE_PLATFORM_XLIB_KHR
 #endif
 
-#define VULKAN_HPP_NO_EXCEPTIONS
 #include <vulkan/vulkan.hpp>
 
 #include "Driver.hpp"
 
 class DriverVk : public Driver {
 public:
+	DriverVk() = default;
     DriverVk(const SDL_Window* pWindow);
 
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint32_t id) override;
+	bool prepareFrame() override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable() override;
     const vk::UniqueDevice& getDevice() const;
-    const vk::UniqueCommandBuffer& getPrimaryCommandBuffer() const;
+	const vk::UniqueCommandPool& getCommandPool() const;
+    const vk::UniqueCommandBuffer& getCommandBuffer() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;
-    const vk::UniqueShaderModule& getModuleFromCache(const char* pFilename) const;
-	vk::ResultValue<vk::UniqueShaderModule> getShaderModuleFromFile(const char* pFilename);
+	vk::UniqueShaderModule getShaderModuleFromFile(const char* pFilename);
 	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties);
 private:
     vk::UniqueInstance m_pInstance;
@@ -67,10 +68,11 @@ private:
     vk::UniqueDevice m_pDevice;
     vk::UniqueFence m_pFence;
     vk::UniqueSwapchainKHR m_pSwapchain;
-    vk::UniqueCommandBuffer m_pPrimaryCommandBuffer;
-    std::vector<vk::UniqueCommandPool> m_pCommandPool;
-    std::unordered_map<const char*, vk::UniqueShaderModule> m_pModuleCache;
+	vk::Queue m_Queue;
+	vk::UniqueCommandPool m_pCommandPool;
+	vk::UniqueCommandBuffer m_pCommandBuffer;
     uint32_t queueFamilyIndex;
+	vk::Format imageFormat;
     bool anisotropy;
     float maxAnisotropy;
 };

@@ -11,6 +11,7 @@
     <ClCompile Include="System.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DriverVk.hpp" />
@@ -23,6 +24,6 @@
     <ClInclude Include="System.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
     <ClInclude Include="Renderer.hpp" />
-    <ClInclude Include="GameConfig.hpp" />
+    <ClInclude Include="Config.hpp" />
   </ItemGroup>
 </Project>
