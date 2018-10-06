@@ -24,6 +24,7 @@ SOFTWARE.
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -36,10 +37,10 @@ using namespace Microsoft::WRL;
 
 #include "Driver.hpp"
 
-class DriverD3D12 : public Driver {
+class DriverDX : public Driver {
 public:
-    DriverD3D12(const SDL_Window* pWindow);
-	~DriverD3D12();
+    DriverDX(const SDL_Window* pWindow);
+	~DriverDX();
 
     // Inherited via IDriver
     bool initialize() override;
@@ -73,4 +74,5 @@ private:
 	UINT m_FrameIndex; 
 	UINT m_HeapSize;
 	UINT m_RenderTargetCount;
+	std::array<float,4> m_ClearColor;
 };

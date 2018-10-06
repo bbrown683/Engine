@@ -69,6 +69,7 @@ private:
     vk::UniqueSurfaceKHR m_pSurface;
     vk::UniqueDevice m_pDevice;
     vk::UniqueFence m_pFence;
+	vk::UniqueSemaphore m_pSemaphore;
     vk::UniqueSwapchainKHR m_pSwapchain;
 	std::vector<vk::UniqueImageView> m_pImageViews;
 	vk::Queue m_Queue;
@@ -82,4 +83,5 @@ private:
     float maxAnisotropy;
 	uint32_t m_ImageCount;
 	uint32_t m_CurrentImage;
+	std::array<float, 4> m_ClearColor;
 };

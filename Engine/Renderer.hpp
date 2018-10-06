@@ -32,7 +32,7 @@ enum class RendererDriver {
     /// Renderer will select the driver to use.
     eAutodetect,
     /// Renderer will select Direct3D12 driver. 
-    eDirect3D12,
+    eDirectX,
     /// Renderer will select select the Vulkan driver.
     eVulkan,
 };

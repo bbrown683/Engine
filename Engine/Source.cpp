@@ -50,9 +50,9 @@ int main(int argc, char** argv) {
 	args.insert(args.begin(), argv, argv + argc);
 	RendererDriver driver = RendererDriver::eAutodetect;
 	for (const char* arg : args) {
-		if (std::strcmp(arg, "--d3d12") == 0)
-			driver = RendererDriver::eDirect3D12;
-		if (std::strcmp(arg, "--vulkan") == 0)
+		if (std::strcmp(arg, "--dx") == 0)
+			driver = RendererDriver::eDirectX;
+		if (std::strcmp(arg, "--vk") == 0)
 			driver = RendererDriver::eVulkan;
 	}
 

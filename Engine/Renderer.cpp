@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include "Renderer.hpp"
-#include "DriverD3D12.hpp"
+#include "DriverDX.hpp"
 #include "DriverVk.hpp"
 #include "thirdparty/loguru.hpp"
 
@@ -48,8 +48,8 @@ bool Renderer::initialize() {
 
 	// TODO: If autodetect is enabled, we will need to enumerate 
 	// both drivers and select the best one.
-	if (m_Driver == RendererDriver::eDirect3D12) {
-		m_pDriver = std::make_unique<DriverD3D12>(m_pWindow);
+	if (m_Driver == RendererDriver::eDirectX) {
+		m_pDriver = std::make_unique<DriverDX>(m_pWindow);
 		LOG_F(INFO, "Direct3D12 driver was selected.");
 	} else if (m_Driver == RendererDriver::eVulkan) {
 		m_pDriver = std::make_unique<DriverVk>(m_pWindow);
@@ -68,8 +68,6 @@ bool Renderer::initialize() {
         return false;
     }
 	m_Running = true;
-	m_pDriver->prepareFrame();
-	m_pDriver->presentFrame();
     return true;
 }
 
@@ -95,7 +93,16 @@ int Renderer::executeEventLoop() {
 			case SDL_KEYDOWN: onKeyPress(); break;
 			case SDL_QUIT: shutdown(); break;
 			}
+
+			if (event.type == SDL_WINDOWEVENT) {
+				switch (event.window.event) {
+				case SDL_WINDOWEVENT_RESIZED: break;
+				}
+			}
 		}
+
+		if(m_pDriver->prepareFrame())
+			m_pDriver->presentFrame();
 	}
 
 	SDL_DestroyWindow(m_pWindow);

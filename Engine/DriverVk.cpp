@@ -37,6 +37,7 @@ DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_CurrentImage = 0;
 	m_pImageViews = std::vector<vk::UniqueImageView>(m_ImageCount);
 	m_pFramebuffers = std::vector<vk::UniqueFramebuffer>(m_ImageCount);
+	m_ClearColor = { 0.1f, 0.3f, 0.5f, 1.0f };
 }
 
 bool DriverVk::initialize() {
@@ -362,16 +363,20 @@ bool DriverVk::selectGpu(uint32_t id) {
 
 		vk::FenceCreateInfo fenceInfo;
 		m_pFence = m_pDevice->createFenceUnique(fenceInfo);
+
+		vk::SemaphoreCreateInfo semaphoreInfo;
+		m_pSemaphore = m_pDevice->createSemaphoreUnique(semaphoreInfo);
 	} catch (vk::SystemError e) {
 		LOG_F(FATAL, "Vulkan driver failure: %i - %s", e.code(), e.what());
 		return false;
 	}
+	LOG_F(INFO, "Vulkan driver was successfully initialized.");
 	return true;
 }
 
 bool DriverVk::prepareFrame() {
 	try {
-		auto acquireResult = m_pDevice->acquireNextImageKHR(m_pSwapchain.get(), UINT64_MAX, nullptr, m_pFence.get());
+		auto acquireResult = m_pDevice->acquireNextImageKHR(m_pSwapchain.get(), UINT64_MAX, m_pSemaphore.get(), nullptr);
 		if (acquireResult.result != vk::Result::eSuccess) {
 			LOG_F(WARNING, "Failed to grab available swapchain image.");
 			return false;
@@ -379,26 +384,20 @@ bool DriverVk::prepareFrame() {
 		else
 			m_CurrentImage = acquireResult.value;
 
-		// Wait for operation to complete.
-		m_pDevice->waitForFences(m_pFence.get(), true, UINT64_MAX);
-		m_pDevice->resetFences(m_pFence.get());
-
 		// Begin recording.
 		vk::CommandBufferBeginInfo beginInfo;
 		beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
 		m_pCommandBuffer->begin(beginInfo);
 
 		std::array<vk::ClearValue, 1> clearValue;
-		clearValue[0].color.float32[0] = 0.1f;
-		clearValue[0].color.float32[1] = 0.3f;
-		clearValue[0].color.float32[2] = 0.5f;
-		clearValue[0].color.float32[3] = 1.0f;
+		clearValue[0].color.setFloat32(m_ClearColor);
 
 		vk::RenderPassBeginInfo passBeginInfo;
 		passBeginInfo.clearValueCount = clearValue.size();
 		passBeginInfo.pClearValues = clearValue.data();
 		passBeginInfo.framebuffer = m_pFramebuffers[m_CurrentImage].get();
 		passBeginInfo.renderPass = m_pRenderPass.get();
+		// TODO: update render area based on swapchain dimensions when resized.
 		passBeginInfo.renderArea = vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(1024, 768));
 
 		m_pCommandBuffer->beginRenderPass(passBeginInfo, vk::SubpassContents::eInline);
@@ -415,10 +414,17 @@ bool DriverVk::prepareFrame() {
 
 bool DriverVk::presentFrame() {
 	try {
-		// We are only submitting  the primary command list.
+		const std::vector<vk::PipelineStageFlags> waitStages = {
+			vk::PipelineStageFlagBits::eAllGraphics
+		};
+
+		// We are only submitting the primary command list.
 		vk::SubmitInfo submitInfo;
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &m_pCommandBuffer.get();
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &m_pSemaphore.get();
+		submitInfo.pWaitDstStageMask = waitStages.data();
 		m_Queue.submit(submitInfo, m_pFence.get());
 
 		// Preprare to present to the queue.

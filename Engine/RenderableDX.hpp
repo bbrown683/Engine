@@ -34,10 +34,10 @@ using namespace Microsoft::WRL;
 
 #include "Renderable.hpp"
 
-class DriverD3D12;
-class RenderableD3D12 : public Renderable {
+class DriverDX;
+class RenderableDX : public Renderable {
 public:
-    RenderableD3D12(DriverD3D12* pDriver);
+    RenderableDX(DriverDX* pDriver);
     bool execute() override;
     bool attachShader(const char* pFilename, ShaderStage stage) override;
     bool setIndexBuffer(std::vector<uint16_t> indices) override;
@@ -45,7 +45,7 @@ public:
 
 	const ComPtr<ID3D12GraphicsCommandList>& getBundle() const;
 private:
-    DriverD3D12* m_pDriver;
+    DriverDX* m_pDriver;
 	ComPtr<ID3D12GraphicsCommandList> m_pBundle;
 	ComPtr<ID3DBlob> m_pVertexShader;
 	ComPtr<ID3DBlob> m_pPixelShader; 

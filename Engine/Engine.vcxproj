@@ -21,9 +21,9 @@
   <ItemGroup>
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Driver.cpp" />
-    <ClCompile Include="DriverD3D12.cpp" />
+    <ClCompile Include="DriverDX.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
-    <ClCompile Include="RenderableD3D12.cpp" />
+    <ClCompile Include="RenderableDX.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Source.cpp" />
@@ -33,11 +33,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.hpp" />
-    <ClInclude Include="DriverD3D12.hpp" />
+    <ClInclude Include="DriverDX.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
     <ClInclude Include="Renderable.hpp" />
-    <ClInclude Include="RenderableD3D12.hpp" />
+    <ClInclude Include="RenderableDX.hpp" />
     <ClInclude Include="RenderableVk.hpp" />
     <ClInclude Include="Renderer.hpp" />
     <ClInclude Include="DriverVk.hpp" />

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "DriverD3D12.hpp"
+#include "DriverDX.hpp"
 
 #include <iostream>
 #include <SDL2/SDL.h>
@@ -31,26 +31,27 @@ SOFTWARE.
 #include "thirdparty/d3dx12.h"
 #include "thirdparty/loguru.hpp"
 
-#include "RenderableD3D12.hpp"
+#include "RenderableDX.hpp"
 
-DriverD3D12::DriverD3D12(const SDL_Window* pWindow) : Driver(pWindow) {
+DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_FrameIndex = 0;
 	m_HeapSize = 0;
 	m_RenderTargetCount = 2;
 	m_pRenderTargets = std::vector<ComPtr<ID3D12Resource>>(m_RenderTargetCount);
+	m_ClearColor = { 0.1f, 0.3f, 0.5f, 1.0f };
 }
 
-DriverD3D12::~DriverD3D12() {
+DriverDX::~DriverDX() {
 	CloseHandle(m_pFenceEvent);
 }
 
-bool DriverD3D12::initialize() {
+bool DriverDX::initialize() {
     // Enable debug layer for D3D12 and DXGI.
 #ifdef _DEBUG
     if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pCpuDebug))))
         return false;
     m_pCpuDebug->EnableLeakTrackingForThread();
-    m_pCpuDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+	m_pCpuDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
 
     if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pGpuDebug))))
         return false;
@@ -88,19 +89,19 @@ bool DriverD3D12::initialize() {
     return !m_pAdapters.empty();
 }
 
-bool DriverD3D12::selectGpu(uint32_t id) {
+bool DriverDX::selectGpu(uint32_t id) {
     // id Does not correlate to a proper GPU.
     if (id >= m_pAdapters.size())
         return false;
 
     // Create the device which is attached to the GPU.
-	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice)))) {
+	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDevice)))) {
 		LOG_F(FATAL, "Could not create D3D12 rendering device.");
 		return false;
 	}
 
 	// Create a queue for passing our command lists to.
-	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+	D3D12_COMMAND_QUEUE_DESC commandQueueDesc {};
 	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue)))) {
 		LOG_F(FATAL, "Could not create D3D12 command queue.");
@@ -161,6 +162,11 @@ bool DriverD3D12::selectGpu(uint32_t id) {
 	if(FAILED(m_pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature))))
 		return false;  
 
+	// Create primary command list.
+	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
+		return false;
+	m_pCommandList->Close();
+
 	// Set viewport.
 	m_Viewport.TopLeftX = 0.0f;
 	m_Viewport.TopLeftY = 0.0f;
@@ -169,6 +175,7 @@ bool DriverD3D12::selectGpu(uint32_t id) {
 	m_Viewport.Width = static_cast<float>(width);
 	m_Viewport.Height = static_cast<float>(height);
 
+	// Create the fence to wait for completion.
 	if(FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
 		return false;
 
@@ -179,12 +186,13 @@ bool DriverD3D12::selectGpu(uint32_t id) {
 		if (FAILED(HRESULT_FROM_WIN32(GetLastError())))
 			return false;
 	}
+	LOG_F(INFO, "DirectX driver was successfully initialized.");
 	return true;
 }
 
-bool DriverD3D12::prepareFrame() {
-	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
-		return false;
+bool DriverDX::prepareFrame() {
+	m_pCommandAllocator->Reset();
+	m_pCommandList->Reset(m_pCommandAllocator.Get(), nullptr);
 
 	// Set typical command list state.
 	m_pCommandList->SetGraphicsRootSignature(m_pRootSignature.Get());
@@ -196,9 +204,7 @@ bool DriverD3D12::prepareFrame() {
 	// Grab handle to our descriptor.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_HeapSize);
 	m_pCommandList->OMSetRenderTargets(1, &descriptorHandle, false, nullptr);
-	const float clearColor[] = { 0.1f, 0.3f, 0.5f, 1.0f };
-	m_pCommandList->ClearRenderTargetView(descriptorHandle, clearColor, 0, nullptr);
-	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pCommandList->ClearRenderTargetView(descriptorHandle, m_ClearColor.data(), 0, nullptr);
 
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PRESENT));
@@ -207,8 +213,8 @@ bool DriverD3D12::prepareFrame() {
 	return true;
 }
 
-bool DriverD3D12::presentFrame() {
-	std::vector<ID3D12CommandList*> commandLists = { m_pCommandList.Get() };
+bool DriverDX::presentFrame() {
+	std::array<ID3D12CommandList*, 1> commandLists = { m_pCommandList.Get() };
 	m_pCommandQueue->ExecuteCommandLists(commandLists.size(), commandLists.data());
 
 	m_pSwapchain->Present(1, 0);
@@ -229,22 +235,22 @@ bool DriverD3D12::presentFrame() {
 	return true;
 }
 	
-std::unique_ptr<Renderable> DriverD3D12::createRenderable() {
-    return std::make_unique<RenderableD3D12>(this);
+std::unique_ptr<Renderable> DriverDX::createRenderable() {
+    return std::make_unique<RenderableDX>(this);
 }
 
-const ComPtr<ID3D12Device>& DriverD3D12::getDevice() const {
+const ComPtr<ID3D12Device>& DriverDX::getDevice() const {
     return m_pDevice;
 }
 
-const ComPtr<ID3D12GraphicsCommandList>& DriverD3D12::getCommandList() const {
+const ComPtr<ID3D12GraphicsCommandList>& DriverDX::getCommandList() const {
 	return m_pCommandList;
 }
 
-const ComPtr<ID3D12CommandAllocator>& DriverD3D12::getCommandAllocator() const {
+const ComPtr<ID3D12CommandAllocator>& DriverDX::getCommandAllocator() const {
 	return m_pCommandAllocator;
 }
 
-const ComPtr<ID3D12RootSignature>& DriverD3D12::getRootSignature() const {
+const ComPtr<ID3D12RootSignature>& DriverDX::getRootSignature() const {
 	return m_pRootSignature;
 }

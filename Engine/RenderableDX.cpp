@@ -22,17 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "RenderableD3D12.hpp"
+#include "RenderableDX.hpp"
 
-#include "DriverD3D12.hpp"
+#include "DriverDX.hpp"
 #include "thirdparty/d3dx12.h"
 
-RenderableD3D12::RenderableD3D12(DriverD3D12* pDriver) : m_pDriver(pDriver) {
+RenderableDX::RenderableDX(DriverDX* pDriver) : m_pDriver(pDriver) {
 	//if(FAILED(m_pDriver->getDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE,
 	//	m_pDriver->getCommandAllocator().Get(), nullptr, IID_PPV_ARGS(&m_pBundle))));
 }
 
-bool RenderableD3D12::execute() {
+bool RenderableDX::execute() {
 	// Define the vertex input layout.
 	std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -56,7 +56,7 @@ bool RenderableD3D12::execute() {
 	return false;
 }
 
-bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
+bool RenderableDX::attachShader(const char* pFilename, ShaderStage stage) {
     const char* pBlobName = std::strcat(const_cast<char*>(pFilename), ".cso");
     const char* target;
     switch (stage) {
@@ -75,14 +75,14 @@ bool RenderableD3D12::attachShader(const char* pFilename, ShaderStage stage) {
     return true;
 }
 
-bool RenderableD3D12::setIndexBuffer(std::vector<uint16_t> indices) {
+bool RenderableDX::setIndexBuffer(std::vector<uint16_t> indices) {
     return false;
 }
 
-bool RenderableD3D12::setVertexBuffer(std::vector<uint32_t> vertices) {
+bool RenderableDX::setVertexBuffer(std::vector<uint32_t> vertices) {
     return false;
 }
 
-const ComPtr<ID3D12GraphicsCommandList>& RenderableD3D12::getBundle() const {
+const ComPtr<ID3D12GraphicsCommandList>& RenderableDX::getBundle() const {
 	return m_pBundle;
 }
