@@ -36,8 +36,8 @@ SOFTWARE.
 DriverD3D12::DriverD3D12(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_FrameIndex = 0;
 	m_HeapSize = 0;
-	m_NumBuffers = 2;
-	m_pRenderTargets = std::vector<ComPtr<ID3D12Resource>>(m_NumBuffers);
+	m_RenderTargetCount = 2;
+	m_pRenderTargets = std::vector<ComPtr<ID3D12Resource>>(m_RenderTargetCount);
 }
 
 DriverD3D12::~DriverD3D12() {
@@ -94,15 +94,29 @@ bool DriverD3D12::selectGpu(uint32_t id) {
         return false;
 
     // Create the device which is attached to the GPU.
-	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDevice)))) {
+	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDevice)))) {
 		LOG_F(FATAL, "Could not create D3D12 rendering device.");
+		return false;
+	}
+
+	// Create a queue for passing our command lists to.
+	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
+	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue)))) {
+		LOG_F(FATAL, "Could not create D3D12 command queue.");
+		return false;
+	}
+
+	// Create a queue to allocate our command lists.
+	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
+		LOG_F(FATAL, "Could not create D3D12 command allocator.");
 		return false;
 	}
         
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
-    swapchainDesc.BufferCount = m_NumBuffers;
-    swapchainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    swapchainDesc.BufferCount = m_RenderTargetCount;
+    swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapchainDesc.SampleDesc.Count = 1;
@@ -119,22 +133,8 @@ bool DriverD3D12::selectGpu(uint32_t id) {
 	pSwapchain.As(&m_pSwapchain);
 	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 
-	// Create a queue for passing our command lists to.
-	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue)))) {
-		LOG_F(FATAL, "Could not create D3D12 command queue.");
-		return false;
-	}
-
-	// Create a queue to allocate our command lists.
-	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
-		LOG_F(FATAL, "Could not create D3D12 command allocator.");
-		return false;
-	}
-
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc {};
-	descriptorHeapDesc.NumDescriptors = m_NumBuffers;
+	descriptorHeapDesc.NumDescriptors = m_RenderTargetCount;
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	if(FAILED(m_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_pDescriptorHeap))))
@@ -143,7 +143,7 @@ bool DriverD3D12::selectGpu(uint32_t id) {
 	// Configure the descriptor for CPU memory data.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 	m_HeapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	for (UINT i = 0; i < m_NumBuffers; i++) {
+	for (UINT i = 0; i < m_RenderTargetCount; i++) {
 		m_pSwapchain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]));
 		m_pDevice->CreateRenderTargetView(m_pRenderTargets[i].Get(), nullptr, destDescriptor);
 		destDescriptor.Offset(1, m_HeapSize);
@@ -196,7 +196,6 @@ bool DriverD3D12::prepareFrame() {
 	// Grab handle to our descriptor.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_HeapSize);
 	m_pCommandList->OMSetRenderTargets(1, &descriptorHandle, false, nullptr);
-
 	const float clearColor[] = { 0.1f, 0.3f, 0.5f, 1.0f };
 	m_pCommandList->ClearRenderTargetView(descriptorHandle, clearColor, 0, nullptr);
 	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

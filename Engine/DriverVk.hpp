@@ -24,6 +24,7 @@ SOFTWARE.
 
 #pragma once
 
+#include <array>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -55,6 +56,7 @@ public:
 	bool prepareFrame() override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable() override;
+
     const vk::UniqueDevice& getDevice() const;
 	const vk::UniqueCommandPool& getCommandPool() const;
     const vk::UniqueCommandBuffer& getCommandBuffer() const;
@@ -68,11 +70,16 @@ private:
     vk::UniqueDevice m_pDevice;
     vk::UniqueFence m_pFence;
     vk::UniqueSwapchainKHR m_pSwapchain;
+	std::vector<vk::UniqueImageView> m_pImageViews;
 	vk::Queue m_Queue;
 	vk::UniqueCommandPool m_pCommandPool;
 	vk::UniqueCommandBuffer m_pCommandBuffer;
-    uint32_t queueFamilyIndex;
-	vk::Format imageFormat;
+	std::vector<vk::UniqueFramebuffer> m_pFramebuffers;
+	vk::UniqueRenderPass m_pRenderPass;
+    uint32_t m_QueueFamilyIndex;
+	vk::Format m_ImageFormat;
     bool anisotropy;
     float maxAnisotropy;
+	uint32_t m_ImageCount;
+	uint32_t m_CurrentImage;
 };

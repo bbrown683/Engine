@@ -72,5 +72,5 @@ private:
 	UINT m_FenceValue;
 	UINT m_FrameIndex; 
 	UINT m_HeapSize;
-	UINT m_NumBuffers;
+	UINT m_RenderTargetCount;
 };
