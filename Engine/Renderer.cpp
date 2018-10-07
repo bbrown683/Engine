@@ -25,7 +25,7 @@ SOFTWARE.
 #include "Renderer.hpp"
 #include "DriverDX.hpp"
 #include "DriverVk.hpp"
-#include "thirdparty/loguru.hpp"
+#include "thirdparty/loguru/loguru.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -38,8 +38,7 @@ Renderer::~Renderer() {
 
 bool Renderer::initialize() {
 	SDL_Init(SDL_INIT_VIDEO);
-	m_pWindow = SDL_CreateWindow("Ivy3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, 
-		SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+	m_pWindow = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_SHOWN);
 	if (!m_pWindow) {
 		LOG_F(FATAL, "SDL window is invalid!");
 		SDL_Quit();
@@ -85,6 +84,16 @@ bool Renderer::setRendererDriver(RendererDriver driver) {
 void Renderer::onKeyPress() {}
 
 int Renderer::executeEventLoop() {
+	auto renderable = m_pDriver->createRenderable();
+	renderable->attachShader("", ShaderStage::Fragment);
+	std::vector<Vertex> vertices = {
+		{ { 0.0f, 0.25f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+		{ { 0.25f, -0.25f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+		{ { -0.25f, -0.25f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }
+	};
+	renderable->setVertices(vertices);
+	renderable->build();
+	m_pDriver->addRenderable(renderable.get());
 	while (m_Running) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event) != false) {

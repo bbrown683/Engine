@@ -27,7 +27,7 @@ SOFTWARE.
 #include <iostream>
 #include <SDL2/SDL_syswm.h>
 
-#include "thirdparty/loguru.hpp"
+#include "thirdparty/loguru/loguru.hpp"
 #include "RenderableVk.hpp"
 #include "System.hpp"
 
@@ -445,6 +445,9 @@ bool DriverVk::presentFrame() {
 
 std::unique_ptr<Renderable> DriverVk::createRenderable() {
     return std::make_unique<RenderableVk>(this);
+}
+
+void DriverVk::addRenderable(Renderable* renderable) {
 }
 
 const vk::UniqueDevice& DriverVk::getDevice() const {

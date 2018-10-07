@@ -30,7 +30,7 @@ SOFTWARE.
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
 #include <wrl/client.h>
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 #include "Renderable.hpp"
 
@@ -38,15 +38,20 @@ class DriverDX;
 class RenderableDX : public Renderable {
 public:
     RenderableDX(DriverDX* pDriver);
-    bool execute() override;
+    bool build() override;
     bool attachShader(const char* pFilename, ShaderStage stage) override;
-    bool setIndexBuffer(std::vector<uint16_t> indices) override;
-    bool setVertexBuffer(std::vector<uint32_t> vertices) override;
-
+    bool setIndices(std::vector<uint16_t> indices) override;
+    bool setVertices(std::vector<Vertex> vertices) override;
 	const ComPtr<ID3D12GraphicsCommandList>& getBundle() const;
+	const ComPtr<ID3D12PipelineState>& getPipelineState() const;
 private:
     DriverDX* m_pDriver;
 	ComPtr<ID3D12GraphicsCommandList> m_pBundle;
+	ComPtr<ID3D12PipelineState> m_pPipelineState;
 	ComPtr<ID3DBlob> m_pVertexShader;
 	ComPtr<ID3DBlob> m_pPixelShader; 
+	ComPtr<ID3D12Resource> m_pVertexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
+	std::vector<uint16_t> m_Indices;
+	std::vector<std::vector<float>> m_Vertices;
 };

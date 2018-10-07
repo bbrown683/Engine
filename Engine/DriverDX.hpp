@@ -33,10 +33,12 @@ SOFTWARE.
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
 #include <wrl/client.h>
-using namespace Microsoft::WRL;
+using Microsoft::WRL::ComPtr;
 
 #include "Driver.hpp"
+#include "thirdparty/glm/glm.hpp"
 
+class RenderableDX;
 class DriverDX : public Driver {
 public:
     DriverDX(const SDL_Window* pWindow);
@@ -48,9 +50,11 @@ public:
 	bool prepareFrame() override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable() override;
+	void addRenderable(Renderable* renderable) override;
     const ComPtr<ID3D12Device>& getDevice() const;
 	const ComPtr<ID3D12GraphicsCommandList>& getCommandList() const;
 	const ComPtr<ID3D12CommandAllocator>& getCommandAllocator() const;
+	const ComPtr<ID3D12CommandAllocator>& getBundledAllocator() const;
 	const ComPtr<ID3D12RootSignature>& getRootSignature() const;
 private:
 #ifdef _DEBUG
@@ -63,16 +67,20 @@ private:
 	ComPtr<IDXGISwapChain3> m_pSwapchain;
     ComPtr<ID3D12CommandQueue> m_pCommandQueue;
 	ComPtr<ID3D12CommandAllocator> m_pCommandAllocator;
+	ComPtr<ID3D12CommandAllocator> m_pBundleAllocator;
 	ComPtr<ID3D12RootSignature> m_pRootSignature;
 	ComPtr<ID3D12DescriptorHeap> m_pDescriptorHeap;
 	std::vector<ComPtr<ID3D12Resource>> m_pRenderTargets;
 	D3D12_VIEWPORT m_Viewport;
+	D3D12_RECT m_ScissorRect;
 	ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
 	ComPtr<ID3D12Fence> m_pFence;
+	std::vector<ID3D12GraphicsCommandList*> m_pBundles;
+	std::vector<RenderableDX*> m_pRenderables;
 	HANDLE m_pFenceEvent;
 	UINT m_FenceValue;
 	UINT m_FrameIndex; 
 	UINT m_HeapSize;
 	UINT m_RenderTargetCount;
-	std::array<float,4> m_ClearColor;
+	glm::vec4 m_ClearColor;
 };

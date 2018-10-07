@@ -25,10 +25,16 @@ SOFTWARE.
 #pragma once
 
 #include <vector>
+#include "thirdparty/glm/glm.hpp"
 
 enum class ShaderStage {
     Fragment,
     Vertex,
+};
+
+struct Vertex {
+	glm::vec3 position;
+	glm::vec4 color;
 };
 
 /// This object contains most of the render-state associated with a single object.
@@ -36,10 +42,9 @@ enum class ShaderStage {
 /// with all of the command buffer/list generation.
 class Renderable {
 public:
-    virtual bool execute() = 0;
-    virtual ~Renderable() {}
-protected:
-    virtual bool attachShader(const char* pFilename, ShaderStage stage) = 0;
-    virtual bool setIndexBuffer(std::vector<uint16_t> indices) = 0;
-    virtual bool setVertexBuffer(std::vector<uint32_t> vertices) = 0;
+	virtual ~Renderable() {}
+    virtual bool build() = 0;
+	virtual bool attachShader(const char* pFilename, ShaderStage stage) = 0;
+	virtual bool setIndices(std::vector<uint16_t> indices) = 0;
+	virtual bool setVertices(std::vector<Vertex> vertices) = 0;
 };

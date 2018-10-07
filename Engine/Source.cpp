@@ -30,14 +30,14 @@ SOFTWARE.
 #pragma warning(disable : 4018)
 #pragma warning(disable : 4996)
 #define LOGURU_IMPLEMENTATION 1
-#include "thirdparty/loguru.hpp"
+#include "thirdparty/loguru/loguru.hpp"
 #pragma warning(pop)
 #define STB_IMAGE_IMPLEMENTATION 1
-#include "thirdparty/stb_image.h"
+#include "thirdparty/stb/stb_image.h"
 #define STB_TRUETYPE_IMPLEMENTATION 1
-#include "thirdparty/stb_truetype.h"
+#include "thirdparty/stb/stb_truetype.h"
 #define TINYOBJLOADER_IMPLEMENTATION 1
-#include "thirdparty/tiny_obj_loader.h"
+#include "thirdparty/tinyobjloader/tiny_obj_loader.h"
 
 int main(int argc, char** argv) {
 	loguru::init(argc, argv);

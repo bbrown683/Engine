@@ -27,6 +27,7 @@ SOFTWARE.
 #include <memory>
 
 #include "Driver.hpp"
+#include "Renderable.hpp"
 
 enum class RendererDriver {
     /// Renderer will select the driver to use.

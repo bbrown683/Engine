@@ -29,7 +29,7 @@ SOFTWARE.
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
-bool RenderableVk::execute() {
+bool RenderableVk::build() {
 	return false;
 }
 
@@ -47,11 +47,11 @@ bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
     return true;
 }
 
-bool RenderableVk::setIndexBuffer(std::vector<uint16_t> indices) {
+bool RenderableVk::setIndices(std::vector<uint16_t> indices) {
     return false;
 }
 
-bool RenderableVk::setVertexBuffer(std::vector<uint32_t> vertices) {
+bool RenderableVk::setVertices(std::vector<Vertex> vertices) {
 	vk::DeviceSize bufferSize = sizeof(uint32_t) * vertices.size();
 	m_pDriver->createBuffer(bufferSize, vk::BufferUsageFlagBits::eVertexBuffer,
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);

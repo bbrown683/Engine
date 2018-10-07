@@ -28,8 +28,9 @@ SOFTWARE.
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
-#include "thirdparty/d3dx12.h"
-#include "thirdparty/loguru.hpp"
+#include "thirdparty/d3dx12/d3dx12.h"
+#include "thirdparty/loguru/loguru.hpp"
+#include "thirdparty/glm/gtc/type_ptr.hpp"
 
 #include "RenderableDX.hpp"
 
@@ -108,12 +109,23 @@ bool DriverDX::selectGpu(uint32_t id) {
 		return false;
 	}
 
-	// Create a queue to allocate our command lists.
+	// Create a queue to allocate our primary command list.
 	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
 		LOG_F(FATAL, "Could not create D3D12 command allocator.");
 		return false;
 	}
-        
+
+	// Create primary command list.
+	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
+		return false;
+	m_pCommandList->Close();
+     
+	// Create a queue to allocate our bundled command lists.
+	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_pBundleAllocator)))) {
+		LOG_F(FATAL, "Could not create D3D12 bundle allocator.");
+		return false;
+	}
+
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
     swapchainDesc.BufferCount = m_RenderTargetCount;
@@ -162,18 +174,11 @@ bool DriverDX::selectGpu(uint32_t id) {
 	if(FAILED(m_pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature))))
 		return false;  
 
-	// Create primary command list.
-	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
-		return false;
-	m_pCommandList->Close();
-
-	// Set viewport.
-	m_Viewport.TopLeftX = 0.0f;
-	m_Viewport.TopLeftY = 0.0f;
+	// Set viewport and scissor rects.
 	int width, height;
 	SDL_GetWindowSize(const_cast<SDL_Window*>(getWindow()), &width, &height);
-	m_Viewport.Width = static_cast<float>(width);
-	m_Viewport.Height = static_cast<float>(height);
+	m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
+	m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<long>(width), static_cast<long>(height));
 
 	// Create the fence to wait for completion.
 	if(FAILED(m_pDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
@@ -197,6 +202,7 @@ bool DriverDX::prepareFrame() {
 	// Set typical command list state.
 	m_pCommandList->SetGraphicsRootSignature(m_pRootSignature.Get());
 	m_pCommandList->RSSetViewports(1, &m_Viewport);
+	m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
 
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT,
 		D3D12_RESOURCE_STATE_RENDER_TARGET));
@@ -204,7 +210,11 @@ bool DriverDX::prepareFrame() {
 	// Grab handle to our descriptor.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), m_FrameIndex, m_HeapSize);
 	m_pCommandList->OMSetRenderTargets(1, &descriptorHandle, false, nullptr);
-	m_pCommandList->ClearRenderTargetView(descriptorHandle, m_ClearColor.data(), 0, nullptr);
+	m_pCommandList->ClearRenderTargetView(descriptorHandle, glm::value_ptr(m_ClearColor), 0, nullptr);
+
+	// Execute bundles.
+	for (size_t i = 0; i < m_pRenderables.size(); i++)
+		m_pCommandList->ExecuteBundle(m_pRenderables[i]->getBundle().Get());
 
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PRESENT));
@@ -239,6 +249,10 @@ std::unique_ptr<Renderable> DriverDX::createRenderable() {
     return std::make_unique<RenderableDX>(this);
 }
 
+void DriverDX::addRenderable(Renderable* renderable) {
+	m_pRenderables.push_back(dynamic_cast<RenderableDX*>(renderable));
+}
+
 const ComPtr<ID3D12Device>& DriverDX::getDevice() const {
     return m_pDevice;
 }
@@ -249,6 +263,10 @@ const ComPtr<ID3D12GraphicsCommandList>& DriverDX::getCommandList() const {
 
 const ComPtr<ID3D12CommandAllocator>& DriverDX::getCommandAllocator() const {
 	return m_pCommandAllocator;
+}
+
+const ComPtr<ID3D12CommandAllocator>& DriverDX::getBundledAllocator() const {
+	return m_pBundleAllocator;
 }
 
 const ComPtr<ID3D12RootSignature>& DriverDX::getRootSignature() const {

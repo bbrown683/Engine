@@ -79,6 +79,15 @@ public:
     /// should cause the application to shutdown.
     virtual bool initialize() = 0;
 
+	/// Creates a renderable object which at runtime is dynamically filled
+	/// with rendering commands. After these commands are filled, it is
+	/// pushed into a buffer where it is ready to be submitted. With the
+	/// once flag set, this renderable will expire and will need to be 
+	/// recreated.
+	virtual std::unique_ptr<Renderable> createRenderable() = 0;
+
+	virtual void addRenderable(Renderable* renderable) = 0;
+
     /// Selects the input GPU for operation. This function will return true if
     /// the Gpu was successfully selected. If this returns false, it should be treated 
     /// as a fatal error if it is the only available Gpu on the system. You can try another
@@ -104,13 +113,6 @@ protected:
     void addGpu(Gpu gpu);
     uint32_t getThreadCount();
     ThreadPool* getThreadPool();
-
-    /// Creates a renderable object which at runtime is dynamically filled
-    /// with rendering commands. After these commands are filled, it is
-    /// pushed into a buffer where it is ready to be submitted. With the
-    /// once flag set, this renderable will expire and will need to be 
-    /// recreated.
-    virtual std::unique_ptr<Renderable> createRenderable() = 0;
 private:
     const SDL_Window* m_pWindow;
     std::vector<Gpu> m_Gpus;

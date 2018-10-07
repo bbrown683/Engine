@@ -56,7 +56,7 @@ public:
 	bool prepareFrame() override;
     bool presentFrame() override;
     std::unique_ptr<Renderable> createRenderable() override;
-
+	void addRenderable(Renderable* renderable) override;
     const vk::UniqueDevice& getDevice() const;
 	const vk::UniqueCommandPool& getCommandPool() const;
     const vk::UniqueCommandBuffer& getCommandBuffer() const;
