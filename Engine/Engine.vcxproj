@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Asset.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="DriverDX.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
+    <ClCompile Include="ObjAsset.cpp" />
     <ClCompile Include="RenderableDX.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -32,10 +34,12 @@
     <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Asset.hpp" />
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="DriverDX.hpp" />
     <ClInclude Include="Driver.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
+    <ClInclude Include="ObjAsset.hpp" />
     <ClInclude Include="Renderable.hpp" />
     <ClInclude Include="RenderableDX.hpp" />
     <ClInclude Include="RenderableVk.hpp" />

@@ -12,6 +12,8 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="DriverDX.cpp" />
     <ClCompile Include="RenderableDX.cpp" />
+    <ClCompile Include="ObjAsset.cpp" />
+    <ClCompile Include="Asset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DriverVk.hpp" />
@@ -25,5 +27,7 @@
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="DriverDX.hpp" />
     <ClInclude Include="RenderableDX.hpp" />
+    <ClInclude Include="ObjAsset.hpp" />
+    <ClInclude Include="Asset.hpp" />
   </ItemGroup>
 </Project>

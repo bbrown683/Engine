@@ -462,6 +462,14 @@ const vk::UniqueCommandBuffer& DriverVk::getCommandBuffer() const {
     return m_pCommandBuffer;
 }
 
+const vk::UniqueFramebuffer & DriverVk::getCurrentFramebuffer() const {
+	return m_pFramebuffers[m_CurrentImage];
+}
+
+const vk::UniqueRenderPass & DriverVk::getRenderPass() const {
+	return m_pRenderPass;
+}
+
 const vk::UniqueSwapchainKHR& DriverVk::getSwapchain() const {
     return m_pSwapchain;
 }

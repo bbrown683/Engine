@@ -44,29 +44,31 @@ DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
 
 DriverDX::~DriverDX() {
 	CloseHandle(m_pFenceEvent);
+#ifdef _DEBUG
+	m_pDxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+#endif
 }
 
 bool DriverDX::initialize() {
-    // Enable debug layer for D3D12 and DXGI.
 #ifdef _DEBUG
-    if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pCpuDebug))))
-        return false;
-    m_pCpuDebug->EnableLeakTrackingForThread();
-	m_pCpuDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+	if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pDebug))))
+		return false;
+	m_pDebug->EnableDebugLayer();
+	m_pDebug->SetEnableGPUBasedValidation(true);
+	m_pDebug->SetEnableSynchronizedCommandQueueValidation(true);
 
-    if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pGpuDebug))))
-        return false;
-    m_pGpuDebug->EnableDebugLayer();
-    m_pGpuDebug->SetEnableGPUBasedValidation(true);
+	if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pDxgiDebug))))
+		return false;
+	m_pDxgiDebug->EnableLeakTrackingForThread();
 #endif
-    // Create the factory which will be used for our swapchain later.
-    if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))))
-        return false;
+	// Create the factory which will be used for our swapchain later.
+	if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))))
+		return false;
 
 	LOG_F(INFO, "Enumerating Adapters:");
     // Enumerate each GPU or software rasterizer found on the system.
     // These will be used to select a GPU to render with.
-    IDXGIAdapter1* pAdapter;
+    ComPtr<IDXGIAdapter1> pAdapter;
     for (UINT i = 0; m_pFactory->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; i++) {
         DXGI_ADAPTER_DESC1 adapterDesc;
 		pAdapter->GetDesc1(&adapterDesc);
@@ -212,10 +214,11 @@ bool DriverDX::prepareFrame() {
 	m_pCommandList->OMSetRenderTargets(1, &descriptorHandle, false, nullptr);
 	m_pCommandList->ClearRenderTargetView(descriptorHandle, glm::value_ptr(m_ClearColor), 0, nullptr);
 
-	// Execute bundles.
-	for (size_t i = 0; i < m_pRenderables.size(); i++)
+	// Execute bundles for each renderable.
+	for (size_t i = 0; i < m_pRenderables.size(); i++) {
+		m_pCommandList->SetPipelineState(m_pRenderables[i]->getPipelineState().Get());
 		m_pCommandList->ExecuteBundle(m_pRenderables[i]->getBundle().Get());
-
+	}
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PRESENT));
 

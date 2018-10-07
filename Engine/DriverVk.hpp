@@ -60,6 +60,8 @@ public:
     const vk::UniqueDevice& getDevice() const;
 	const vk::UniqueCommandPool& getCommandPool() const;
     const vk::UniqueCommandBuffer& getCommandBuffer() const;
+	const vk::UniqueFramebuffer& getCurrentFramebuffer() const;
+	const vk::UniqueRenderPass& getRenderPass() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;
 	vk::UniqueShaderModule getShaderModuleFromFile(const char* pFilename);
 	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties);

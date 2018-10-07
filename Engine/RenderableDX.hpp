@@ -52,6 +52,4 @@ private:
 	ComPtr<ID3DBlob> m_pPixelShader; 
 	ComPtr<ID3D12Resource> m_pVertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
-	std::vector<uint16_t> m_Indices;
-	std::vector<std::vector<float>> m_Vertices;
 };

@@ -25,6 +25,7 @@ SOFTWARE.
 #include "Renderer.hpp"
 #include "DriverDX.hpp"
 #include "DriverVk.hpp"
+#include "ObjAsset.hpp"
 #include "thirdparty/loguru/loguru.hpp"
 
 #include <SDL2/SDL.h>
@@ -84,6 +85,7 @@ bool Renderer::setRendererDriver(RendererDriver driver) {
 void Renderer::onKeyPress() {}
 
 int Renderer::executeEventLoop() {
+	/*
 	auto renderable = m_pDriver->createRenderable();
 	renderable->attachShader("", ShaderStage::Fragment);
 	std::vector<Vertex> vertices = {
@@ -94,6 +96,11 @@ int Renderer::executeEventLoop() {
 	renderable->setVertices(vertices);
 	renderable->build();
 	m_pDriver->addRenderable(renderable.get());
+	*/
+	ObjAsset obj = ObjAsset(m_pDriver.get());
+	bool result = obj.load("C:\\Users\\Ben\\Ivy3\\Engine\\assets\\cube.obj");
+	if (!result)
+		LOG_F(WARNING, "Failed to load cube.obj");
 	while (m_Running) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event) != false) {

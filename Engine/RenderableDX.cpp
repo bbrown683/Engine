@@ -37,7 +37,7 @@ bool RenderableDX::build() {
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc{};
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
 	psoDesc.pRootSignature = m_pDriver->getRootSignature().Get();
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_pVertexShader.Get());
@@ -96,7 +96,7 @@ bool RenderableDX::setVertices(std::vector<Vertex> vertices) {
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);
 	m_pVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
-	memcpy(pVertexDataBegin, vertices.data(), vertexBufferSize);
+	memcpy(pVertexDataBegin, vertices.data(), sizeof(vertexBufferSize));
 	m_pVertexBuffer->Unmap(0, nullptr);
 
 	m_VertexBufferView.BufferLocation = m_pVertexBuffer->GetGPUVirtualAddress();

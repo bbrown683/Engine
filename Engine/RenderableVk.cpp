@@ -30,20 +30,26 @@ SOFTWARE.
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableVk::build() {
+	vk::CommandBufferAllocateInfo allocateInfo;
+	allocateInfo.commandPool = m_pDriver->getCommandPool().get();
+	allocateInfo.commandBufferCount = 1;
+	allocateInfo.level = vk::CommandBufferLevel::eSecondary;
+	m_pSecondaryBuffer = std::move(m_pDriver->getDevice()->allocateCommandBuffersUnique(allocateInfo).front());
+	
+	vk::CommandBufferInheritanceInfo inheritInfo;
+	inheritInfo.framebuffer = m_pDriver->getCurrentFramebuffer().get();
+	inheritInfo.renderPass = m_pDriver->getRenderPass().get();
+
+	vk::CommandBufferBeginInfo beginInfo;
+	beginInfo.pInheritanceInfo = &inheritInfo;
+	m_pSecondaryBuffer->begin(beginInfo);
+	
+
+	m_pSecondaryBuffer->end();
 	return false;
 }
 
 bool RenderableVk::attachShader(const char* pFilename, ShaderStage stage) {
-	vk::UniqueShaderModule module = m_pDriver->getShaderModuleFromFile(pFilename);
-
-    vk::PipelineShaderStageCreateInfo shaderStageInfo;
-    shaderStageInfo.module = module.get();
-    shaderStageInfo.pName = "main";
-    switch (stage) {
-    case ShaderStage::Fragment: shaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment; break;
-    case ShaderStage::Vertex: shaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    }
-    m_ShaderStages.push_back(std::move(shaderStageInfo));
     return true;
 }
 
@@ -52,8 +58,5 @@ bool RenderableVk::setIndices(std::vector<uint16_t> indices) {
 }
 
 bool RenderableVk::setVertices(std::vector<Vertex> vertices) {
-	vk::DeviceSize bufferSize = sizeof(uint32_t) * vertices.size();
-	m_pDriver->createBuffer(bufferSize, vk::BufferUsageFlagBits::eVertexBuffer,
-		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
     return false;
 }

@@ -58,8 +58,8 @@ public:
 	const ComPtr<ID3D12RootSignature>& getRootSignature() const;
 private:
 #ifdef _DEBUG
-    ComPtr<IDXGIDebug1> m_pCpuDebug;
-    ComPtr<ID3D12Debug1> m_pGpuDebug;
+	ComPtr<IDXGIDebug1> m_pDxgiDebug;
+	ComPtr<ID3D12Debug1> m_pDebug;
 #endif
 	ComPtr<IDXGIFactory5> m_pFactory;
     ComPtr<ID3D12Device> m_pDevice;
@@ -75,7 +75,6 @@ private:
 	D3D12_RECT m_ScissorRect;
 	ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
 	ComPtr<ID3D12Fence> m_pFence;
-	std::vector<ID3D12GraphicsCommandList*> m_pBundles;
 	std::vector<RenderableDX*> m_pRenderables;
 	HANDLE m_pFenceEvent;
 	UINT m_FenceValue;

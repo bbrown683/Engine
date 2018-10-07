@@ -43,6 +43,7 @@ public:
     bool setVertices(std::vector<Vertex> vertices) override;
 private:
     DriverVk* m_pDriver;
+	vk::UniqueCommandBuffer m_pSecondaryBuffer;
 	vk::UniqueBuffer m_IndexBuffer;
 	vk::UniqueBuffer m_VertexBuffer;
 	vk::UniqueDeviceMemory m_IndexBufferMemory;
