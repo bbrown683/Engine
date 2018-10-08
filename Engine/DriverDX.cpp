@@ -39,13 +39,13 @@ DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_HeapSize = 0;
 	m_RenderTargetCount = 2;
 	m_pRenderTargets = std::vector<ComPtr<ID3D12Resource>>(m_RenderTargetCount);
-	m_ClearColor = { 0.1f, 0.3f, 0.5f, 1.0f };
+	m_ClearColor = { 0.0f, 0.2f, 0.4f, 1.0f };
 }
 
 DriverDX::~DriverDX() {
 	CloseHandle(m_pFenceEvent);
 #ifdef _DEBUG
-	m_pDxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+	//m_pDxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
 #endif
 }
 
@@ -54,8 +54,8 @@ bool DriverDX::initialize() {
 	if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pDebug))))
 		return false;
 	m_pDebug->EnableDebugLayer();
-	m_pDebug->SetEnableGPUBasedValidation(true);
-	m_pDebug->SetEnableSynchronizedCommandQueueValidation(true);
+	//m_pDebug->SetEnableGPUBasedValidation(true);
+	//m_pDebug->SetEnableSynchronizedCommandQueueValidation(true);
 
 	if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pDxgiDebug))))
 		return false;
@@ -117,16 +117,18 @@ bool DriverDX::selectGpu(uint32_t id) {
 		return false;
 	}
 
-	// Create primary command list.
-	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
-		return false;
-	m_pCommandList->Close();
-     
 	// Create a queue to allocate our bundled command lists.
 	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_pBundleAllocator)))) {
 		LOG_F(FATAL, "Could not create D3D12 bundle allocator.");
 		return false;
 	}
+
+	// Create primary command list.
+	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
+		return false;
+	
+	if (FAILED(m_pCommandList->Close()))
+		return false;
 
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
@@ -154,18 +156,19 @@ bool DriverDX::selectGpu(uint32_t id) {
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	if(FAILED(m_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_pDescriptorHeap))))
 		return false;
+	m_HeapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	// Configure the descriptor for CPU memory data.
 	CD3DX12_CPU_DESCRIPTOR_HANDLE destDescriptor(m_pDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-	m_HeapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	for (UINT i = 0; i < m_RenderTargetCount; i++) {
-		m_pSwapchain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]));
+		if (FAILED(m_pSwapchain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]))))
+			return false;
 		m_pDevice->CreateRenderTargetView(m_pRenderTargets[i].Get(), nullptr, destDescriptor);
 		destDescriptor.Offset(1, m_HeapSize);
 	}
 
 	// Initialize the root signature.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc {};
 	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	
 	// Compile and create root signature.
@@ -179,7 +182,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 	// Set viewport and scissor rects.
 	int width, height;
 	SDL_GetWindowSize(const_cast<SDL_Window*>(getWindow()), &width, &height);
-	m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
+	m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<long>(width), static_cast<long>(height));
 
 	// Create the fence to wait for completion.
@@ -198,8 +201,10 @@ bool DriverDX::selectGpu(uint32_t id) {
 }
 
 bool DriverDX::prepareFrame() {
-	m_pCommandAllocator->Reset();
-	m_pCommandList->Reset(m_pCommandAllocator.Get(), nullptr);
+	if (FAILED(m_pCommandAllocator->Reset()))
+		return false;
+	if (FAILED(m_pCommandList->Reset(m_pCommandAllocator.Get(), nullptr)))
+		return false;
 
 	// Set typical command list state.
 	m_pCommandList->SetGraphicsRootSignature(m_pRootSignature.Get());
@@ -215,14 +220,14 @@ bool DriverDX::prepareFrame() {
 	m_pCommandList->ClearRenderTargetView(descriptorHandle, glm::value_ptr(m_ClearColor), 0, nullptr);
 
 	// Execute bundles for each renderable.
-	for (size_t i = 0; i < m_pRenderables.size(); i++) {
-		m_pCommandList->SetPipelineState(m_pRenderables[i]->getPipelineState().Get());
+	for (size_t i = 0; i < m_pRenderables.size(); i++)
 		m_pCommandList->ExecuteBundle(m_pRenderables[i]->getBundle().Get());
-	}
+
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PRESENT));
 
-	m_pCommandList->Close();
+	if(FAILED(m_pCommandList->Close()))
+		return false;
 	return true;
 }
 
@@ -230,16 +235,19 @@ bool DriverDX::presentFrame() {
 	std::array<ID3D12CommandList*, 1> commandLists = { m_pCommandList.Get() };
 	m_pCommandQueue->ExecuteCommandLists(commandLists.size(), commandLists.data());
 
-	m_pSwapchain->Present(1, 0);
+	if (FAILED(m_pSwapchain->Present(1, 0)))
+		return false;
 
 	// Signal and increment the fence value.
 	const UINT64 fenceValue = m_FenceValue;
-	m_pCommandQueue->Signal(m_pFence.Get(), fenceValue);
+	if (FAILED(m_pCommandQueue->Signal(m_pFence.Get(), fenceValue)))
+		return false;
 	m_FenceValue++;
 
 	// Wait until the previous frame is finished.
 	if (m_pFence->GetCompletedValue() < fenceValue) {
-		m_pFence->SetEventOnCompletion(fenceValue, m_pFenceEvent);
+		if (FAILED(m_pFence->SetEventOnCompletion(fenceValue, m_pFenceEvent)))
+			return false;
 		WaitForSingleObject(m_pFenceEvent, INFINITE);
 	}
 

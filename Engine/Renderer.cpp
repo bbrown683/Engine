@@ -85,18 +85,17 @@ bool Renderer::setRendererDriver(RendererDriver driver) {
 void Renderer::onKeyPress() {}
 
 int Renderer::executeEventLoop() {
-	/*
 	auto renderable = m_pDriver->createRenderable();
 	renderable->attachShader("", ShaderStage::Fragment);
 	std::vector<Vertex> vertices = {
-		{ { 0.0f, 0.25f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ { 0.25f, -0.25f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ { -0.25f, -0.25f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }
+		{ { 0.0f, 0.25f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ { 0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
 	};
 	renderable->setVertices(vertices);
 	renderable->build();
 	m_pDriver->addRenderable(renderable.get());
-	*/
+
 	ObjAsset obj = ObjAsset(m_pDriver.get());
 	bool result = obj.load("C:\\Users\\Ben\\Ivy3\\Engine\\assets\\cube.obj");
 	if (!result)
@@ -117,8 +116,8 @@ int Renderer::executeEventLoop() {
 			}
 		}
 
-		if(m_pDriver->prepareFrame())
-			m_pDriver->presentFrame();
+		m_pDriver->prepareFrame();
+		m_pDriver->presentFrame();
 	}
 
 	SDL_DestroyWindow(m_pWindow);

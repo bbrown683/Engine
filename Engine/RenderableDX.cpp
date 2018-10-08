@@ -31,13 +31,18 @@ SOFTWARE.
 RenderableDX::RenderableDX(DriverDX* pDriver) : m_pDriver(pDriver) {}
 
 bool RenderableDX::build() {
+	if (m_pBundle) {
+		if (FAILED(m_pBundle->Reset(m_pDriver->getBundledAllocator().Get(), nullptr)))
+			return false;
+	}
+
 	// Define the vertex input layout.
 	std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
 
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc {};
 	psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
 	psoDesc.pRootSignature = m_pDriver->getRootSignature().Get();
 	psoDesc.VS = CD3DX12_SHADER_BYTECODE(m_pVertexShader.Get());
@@ -60,18 +65,22 @@ bool RenderableDX::build() {
 	if (FAILED(m_pDriver->getDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE,
 		m_pDriver->getBundledAllocator().Get(), m_pPipelineState.Get(), IID_PPV_ARGS(&m_pBundle))))
 		return false;
-	m_pBundle->SetGraphicsRootSignature(m_pDriver->getRootSignature().Get());
+
+	// Set bundle state and draw.
+	//m_pBundle->SetGraphicsRootSignature(m_pDriver->getRootSignature().Get());
 	m_pBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_pBundle->IASetVertexBuffers(0, 1, &m_VertexBufferView);
 	m_pBundle->DrawInstanced(3, 1, 0, 0);
-	m_pBundle->Close();
+	
+	if (FAILED(m_pBundle->Close()))
+		return false;
 	return true;
 }
 
 bool RenderableDX::attachShader(const char* pFilename, ShaderStage stage) {
 	ComPtr<ID3DBlob> pError;
 	auto path = L"C:\\Users\\Ben\\Ivy3\\Engine\\shaders\\shaders.hlsl";
-	if (FAILED(D3DCompileFromFile(L"C:\\Users\\Ben\\Ivy3\\Engine\\shaders\\shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0",
+	if (FAILED(D3DCompileFromFile(path, nullptr, nullptr, "VSMain", "vs_5_0",
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &m_pVertexShader, &pError)))
 		return false;
 	if (FAILED(D3DCompileFromFile(path, nullptr, nullptr, "PSMain", "ps_5_0",
@@ -95,7 +104,8 @@ bool RenderableDX::setVertices(std::vector<Vertex> vertices) {
 	// Copy the triangle data to the vertex buffer.
 	UINT8* pVertexDataBegin;
 	CD3DX12_RANGE readRange(0, 0);
-	m_pVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+	if(FAILED(m_pVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin))))
+		return false;
 	memcpy(pVertexDataBegin, vertices.data(), sizeof(vertexBufferSize));
 	m_pVertexBuffer->Unmap(0, nullptr);
 
