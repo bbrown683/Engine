@@ -87,15 +87,17 @@ void Renderer::onKeyPress() {}
 int Renderer::executeEventLoop() {
 	auto renderable = m_pDriver->createRenderable();
 	renderable->attachShader("", ShaderStage::Fragment);
+
+	float m_aspectRatio = static_cast<float>(1024) / static_cast<float>(768);
+
 	std::vector<Vertex> vertices = {
-		{ { 0.0f, 0.25f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ { 0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ { -0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
+			{ { 0.0f, 0.25f * m_aspectRatio, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+			{ { 0.25f, -0.25f * m_aspectRatio, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+			{ { -0.25f, -0.25f * m_aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
 	};
 	renderable->setVertices(vertices);
 	renderable->build();
 	m_pDriver->addRenderable(renderable.get());
-
 	ObjAsset obj = ObjAsset(m_pDriver.get());
 	bool result = obj.load("C:\\Users\\Ben\\Ivy3\\Engine\\assets\\cube.obj");
 	if (!result)

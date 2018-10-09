@@ -104,7 +104,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 	}
 
 	// Create a queue for passing our command lists to.
-	D3D12_COMMAND_QUEUE_DESC commandQueueDesc {};
+	D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {};
 	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue)))) {
 		LOG_F(FATAL, "Could not create D3D12 command queue.");
@@ -131,7 +131,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 		return false;
 
     // Describe and create the swap chain.
-    DXGI_SWAP_CHAIN_DESC1 swapchainDesc {};
+    DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
     swapchainDesc.BufferCount = m_RenderTargetCount;
     swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -142,15 +142,19 @@ bool DriverDX::selectGpu(uint32_t id) {
     SDL_VERSION(&wmInfo.version);
     if (!SDL_GetWindowWMInfo(const_cast<SDL_Window*>(getWindow()), &wmInfo))
         return false;
+	HWND pWindow = wmInfo.info.win.window;
 
 	ComPtr<IDXGISwapChain1> pSwapchain;
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), wmInfo.info.win.window,
+    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), pWindow,
         &swapchainDesc, nullptr, nullptr, pSwapchain.GetAddressOf())))
         return false;
 	pSwapchain.As(&m_pSwapchain);
 	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc {};
+	if (FAILED(m_pFactory->MakeWindowAssociation(pWindow, DXGI_MWA_NO_ALT_ENTER)))
+		return false;
+
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
 	descriptorHeapDesc.NumDescriptors = m_RenderTargetCount;
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
@@ -168,7 +172,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 	}
 
 	// Initialize the root signature.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc {};
+	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 	
 	// Compile and create root signature.
