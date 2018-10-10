@@ -32,6 +32,7 @@ SOFTWARE.
 #include "thirdparty/loguru/loguru.hpp"
 #include "thirdparty/glm/gtc/type_ptr.hpp"
 
+#include "HelperDX.hpp"
 #include "RenderableDX.hpp"
 
 DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
@@ -61,17 +62,21 @@ bool DriverDX::initialize() {
 		return false;
 	m_pDxgiDebug->EnableLeakTrackingForThread();
 #endif
-	// Create the factory which will be used for our swapchain later.
-	if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))))
+	
+	auto factory = HelperDX::createFactory(0);
+	if (FAILED(factory.first))
 		return false;
+	m_pFactory.Swap(factory.second);
 
 	LOG_F(INFO, "Enumerating Adapters:");
     // Enumerate each GPU or software rasterizer found on the system.
-    // These will be used to select a GPU to render with.
-    ComPtr<IDXGIAdapter1> pAdapter;
-    for (UINT i = 0; m_pFactory->EnumAdapters1(i, &pAdapter) != DXGI_ERROR_NOT_FOUND; i++) {
-        DXGI_ADAPTER_DESC1 adapterDesc;
-		pAdapter->GetDesc1(&adapterDesc);
+    // These will be used to select a GPU to render with
+	m_pAdapters = HelperDX::getAdapters(m_pFactory.Get());
+	if (m_pAdapters.empty())
+		return false;
+	for (size_t i = 0; i < m_pAdapters.size(); i++) {
+		DXGI_ADAPTER_DESC1 adapterDesc;
+		m_pAdapters[i]->GetDesc1(&adapterDesc);
 
 		Gpu gpu;
 		gpu.id = static_cast<uint32_t>(i);
@@ -87,9 +92,8 @@ bool DriverDX::initialize() {
 		LOG_F(INFO, "\t\tVendorId: %u", gpu.vendorId);
 		LOG_F(INFO, "\t\tDeviceId: %u", gpu.deviceId);
 		addGpu(gpu);
-		m_pAdapters.push_back(std::move(pAdapter));
     }
-    return !m_pAdapters.empty();
+    return true;
 }
 
 bool DriverDX::selectGpu(uint32_t id) {
@@ -97,62 +101,45 @@ bool DriverDX::selectGpu(uint32_t id) {
     if (id >= m_pAdapters.size())
         return false;
 
-    // Create the device which is attached to the GPU.
-	if (FAILED(D3D12CreateDevice(m_pAdapters[id].Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDevice)))) {
-		LOG_F(FATAL, "Could not create D3D12 rendering device.");
+	auto device = HelperDX::createDevice(m_pAdapters[id].Get());
+	if (FAILED(device.first))
 		return false;
-	}
+	m_pDevice.Swap(device.second);
 
-	// Create a queue for passing our command lists to.
-	D3D12_COMMAND_QUEUE_DESC commandQueueDesc = {};
-	commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-	if (FAILED(m_pDevice->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_pCommandQueue)))) {
-		LOG_F(FATAL, "Could not create D3D12 command queue.");
+	auto queue = HelperDX::createCommandQueue(m_pDevice.Get());
+	if (FAILED(queue.first))
 		return false;
-	}
+	m_pCommandQueue.Swap(queue.second);
 
-	// Create a queue to allocate our primary command list.
-	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
-		LOG_F(FATAL, "Could not create D3D12 command allocator.");
+	auto commandAllocator = HelperDX::createCommandAllocator(m_pDevice.Get());
+	if (FAILED(commandAllocator.first))
 		return false;
-	}
+	m_pCommandAllocator.Swap(commandAllocator.second);
 
-	// Create a queue to allocate our bundled command lists.
-	if (FAILED(m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_pBundleAllocator)))) {
-		LOG_F(FATAL, "Could not create D3D12 bundle allocator.");
+	auto bundleAllocator = HelperDX::createCommandAllocator(m_pDevice.Get(), D3D12_COMMAND_LIST_TYPE_BUNDLE);
+	if (FAILED(bundleAllocator.first))
 		return false;
-	}
+	m_pBundleAllocator.Swap(bundleAllocator.second);
 
-	// Create primary command list.
-	if (FAILED(m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_pCommandList))))
+	auto commandList = HelperDX::createCommandList(m_pDevice.Get(), m_pCommandAllocator.Get());
+	if (FAILED(commandList.first))
 		return false;
-	
+	m_pCommandList.Swap(commandList.second);
+
 	if (FAILED(m_pCommandList->Close()))
 		return false;
-
-    // Describe and create the swap chain.
-    DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
-    swapchainDesc.BufferCount = m_RenderTargetCount;
-    swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapchainDesc.SampleDesc.Count = 1;
 
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
     if (!SDL_GetWindowWMInfo(const_cast<SDL_Window*>(getWindow()), &wmInfo))
         return false;
-	HWND pWindow = wmInfo.info.win.window;
+	HWND hWnd = wmInfo.info.win.window;
 
-	ComPtr<IDXGISwapChain1> pSwapchain;
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(m_pCommandQueue.Get(), pWindow,
-        &swapchainDesc, nullptr, nullptr, pSwapchain.GetAddressOf())))
-        return false;
-	pSwapchain.As(&m_pSwapchain);
-	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
-
-	if (FAILED(m_pFactory->MakeWindowAssociation(pWindow, DXGI_MWA_NO_ALT_ENTER)))
+	auto swapchain = HelperDX::createSwapchain(m_pFactory.Get(), m_pCommandQueue.Get(), hWnd, m_RenderTargetCount);
+	if (FAILED(swapchain.first))
 		return false;
+	swapchain.second.As(&m_pSwapchain);
+	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
 	descriptorHeapDesc.NumDescriptors = m_RenderTargetCount;
@@ -171,17 +158,10 @@ bool DriverDX::selectGpu(uint32_t id) {
 		destDescriptor.Offset(1, m_HeapSize);
 	}
 
-	// Initialize the root signature.
-	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
-	rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-	
-	// Compile and create root signature.
-	ComPtr<ID3DBlob> pSignature;
-	ComPtr<ID3DBlob> pError;
-	if(FAILED(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &pSignature, &pError)))
+	auto rootSignature = HelperDX::createRootSignature(m_pDevice.Get());
+	if (FAILED(rootSignature.first))
 		return false;
-	if(FAILED(m_pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature))))
-		return false;  
+	m_pRootSignature.Swap(rootSignature.second);
 
 	// Set viewport and scissor rects.
 	int width, height;

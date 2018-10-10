@@ -25,6 +25,7 @@ SOFTWARE.
 #include <vector>
 
 #include "EngineRenderer.hpp"
+#include "HelperDX.hpp"
 
 #pragma warning(push)
 #pragma warning(disable : 4018)

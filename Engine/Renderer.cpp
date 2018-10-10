@@ -116,10 +116,10 @@ int Renderer::executeEventLoop() {
 				case SDL_WINDOWEVENT_RESIZED: break;
 				}
 			}
-		}
 
-		m_pDriver->prepareFrame();
-		m_pDriver->presentFrame();
+			m_pDriver->prepareFrame();
+			m_pDriver->presentFrame();
+		}
 	}
 
 	SDL_DestroyWindow(m_pWindow);

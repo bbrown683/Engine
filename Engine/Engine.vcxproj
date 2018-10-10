@@ -24,6 +24,7 @@
     <ClCompile Include="Driver.cpp" />
     <ClCompile Include="DriverDX.cpp" />
     <ClCompile Include="EngineRenderer.cpp" />
+    <ClCompile Include="HelperDX.cpp" />
     <ClCompile Include="ObjAsset.cpp" />
     <ClCompile Include="RenderableDX.cpp" />
     <ClCompile Include="RenderableVk.cpp" />
@@ -38,6 +39,7 @@
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="DriverDX.hpp" />
     <ClInclude Include="Driver.hpp" />
+    <ClInclude Include="HelperDX.hpp" />
     <ClInclude Include="EngineRenderer.hpp" />
     <ClInclude Include="ObjAsset.hpp" />
     <ClInclude Include="Renderable.hpp" />
