@@ -1,5 +1,8 @@
 #include "helper_vk.hpp"
 
+#include <fstream>
+#include <streambuf>
+
 #include "thirdparty/loguru/loguru.hpp"
 
 bool HelperVk::hasRequiredInstanceExtensions() {
@@ -273,4 +276,14 @@ uint32_t HelperVk::getMemoryTypeIndex(vk::PhysicalDevice physicalDevice, uint32_
 		typeBits >>= 1;
 	}
 	return std::numeric_limits<uint32_t>::max();
+}
+
+vk::UniqueShaderModule HelperVk::createShaderModule(vk::Device device, const char* pFilePath) {
+	std::ifstream shaderStream(pFilePath, std::ios::binary);
+	std::string shaderContent((std::istreambuf_iterator<char>(shaderStream)),
+		std::istreambuf_iterator<char>());
+	vk::ShaderModuleCreateInfo moduleInfo;
+	moduleInfo.codeSize = shaderContent.size();
+	moduleInfo.pCode = reinterpret_cast<const uint32_t*>(shaderContent.data());
+	return std::move(device.createShaderModuleUnique(moduleInfo));
 }

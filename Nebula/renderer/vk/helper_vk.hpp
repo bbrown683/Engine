@@ -28,6 +28,7 @@ public:
 		vk::SwapchainKHR previousSwapchain = nullptr);
 	static std::vector<vk::UniqueImageView> createImageViews(vk::Device device, vk::SwapchainKHR swapchain, vk::Image image = nullptr, vk::Format format = vk::Format::eR8G8B8A8Unorm,
 		vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor);
+	static vk::UniqueShaderModule createShaderModule(vk::Device device, const char* pFilePath);
 	static uint32_t selectQueueFamilyIndex(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface);
 	static vk::Format selectColorFormat(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface);
 	static vk::Format selectDepthStencilFormat(vk::PhysicalDevice physicalDevice);

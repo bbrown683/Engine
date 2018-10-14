@@ -63,10 +63,12 @@ bool DriverDX::initialize() {
 	m_pDxgiDebug->EnableLeakTrackingForThread();
 #endif
 	
-	auto factory = HelperDX::createFactory(0);
-	if (FAILED(factory.first))
+	if(auto factory = HelperDX::createFactory(0); factory.has_value())
+		m_pFactory.Swap(factory.value());
+	else {
+		LOG_F(FATAL, "Failed to create DXGI Factory.");
 		return false;
-	m_pFactory.Swap(factory.second);
+	}
 
 	LOG_F(INFO, "Enumerating Adapters:");
     // Enumerate each GPU or software rasterizer found on the system.
@@ -101,30 +103,46 @@ bool DriverDX::selectGpu(uint32_t id) {
     if (id >= m_pAdapters.size())
         return false;
 
-	auto device = HelperDX::createDevice(m_pAdapters[id].Get());
-	if (FAILED(device.first))
-		return false;
-	m_pDevice.Swap(device.second);
+	ComPtr<IDXGIAdapter1> adapter = m_pAdapters[id].Get();
 
-	auto queue = HelperDX::createCommandQueue(m_pDevice.Get());
-	if (FAILED(queue.first))
+	// Create the main rendering device.
+	if (auto device = HelperDX::createDevice(adapter.Get()); device.has_value())
+		m_pDevice.Swap(device.value());
+	else {
+		LOG_F(FATAL, "Failed to create device.");
 		return false;
-	m_pCommandQueue.Swap(queue.second);
+	}
 
-	auto commandAllocator = HelperDX::createCommandAllocator(m_pDevice.Get());
-	if (FAILED(commandAllocator.first))
+	// Create the command queue to submit our command lists to.
+	if (auto commandQueue = HelperDX::createCommandQueue(m_pDevice.Get()); commandQueue.has_value())
+		m_pCommandQueue.Swap(commandQueue.value());
+	else {
+		LOG_F(FATAL, "Failed to create command queue");
 		return false;
-	m_pCommandAllocator.Swap(commandAllocator.second);
+	}
 
-	auto bundleAllocator = HelperDX::createCommandAllocator(m_pDevice.Get(), D3D12_COMMAND_LIST_TYPE_BUNDLE);
-	if (FAILED(bundleAllocator.first))
+	// Create the command allocator for our primary command list to submit to.
+	if (auto commandAllocator = HelperDX::createCommandAllocator(m_pDevice.Get()); commandAllocator.has_value())
+		m_pCommandAllocator.Swap(commandAllocator.value());
+	else {
+		LOG_F(FATAL, "Failed to create command allocator.");
 		return false;
-	m_pBundleAllocator.Swap(bundleAllocator.second);
+	}
 
-	auto commandList = HelperDX::createCommandList(m_pDevice.Get(), m_pCommandAllocator.Get());
-	if (FAILED(commandList.first))
+	// Create the command allocator for our primary command list to submit to.
+	if (auto bundleAllocator = HelperDX::createCommandAllocator(m_pDevice.Get(), D3D12_COMMAND_LIST_TYPE_BUNDLE); bundleAllocator.has_value())
+		m_pBundleAllocator.Swap(bundleAllocator.value());
+	else {
+		LOG_F(FATAL, "Failed to create bundle allocator.");
 		return false;
-	m_pCommandList.Swap(commandList.second);
+	}
+
+	if (auto commandList = HelperDX::createCommandList(m_pDevice.Get(), m_pCommandAllocator.Get()); commandList.has_value())
+		m_pCommandList.Swap(commandList.value());
+	else {
+		LOG_F(FATAL, "Failed to create primary command list.");
+		return false;
+	}
 
 	if (FAILED(m_pCommandList->Close()))
 		return false;
@@ -135,10 +153,13 @@ bool DriverDX::selectGpu(uint32_t id) {
         return false;
 	HWND hWnd = wmInfo.info.win.window;
 
-	auto swapchain = HelperDX::createSwapchain(m_pFactory.Get(), m_pCommandQueue.Get(), hWnd, m_RenderTargetCount);
-	if (FAILED(swapchain.first))
+	if (auto swapchain = HelperDX::createSwapchain(m_pFactory.Get(), m_pCommandQueue.Get(), hWnd, m_RenderTargetCount); swapchain.has_value())
+		swapchain.value().As(&m_pSwapchain);
+	else {
+		LOG_F(FATAL, "Failed to create DXGI Swapchain");
 		return false;
-	swapchain.second.As(&m_pSwapchain);
+	}
+
 	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
@@ -158,10 +179,12 @@ bool DriverDX::selectGpu(uint32_t id) {
 		destDescriptor.Offset(1, m_HeapSize);
 	}
 
-	auto rootSignature = HelperDX::createRootSignature(m_pDevice.Get());
-	if (FAILED(rootSignature.first))
+	if (auto rootSignature = HelperDX::createRootSignature(m_pDevice.Get()); rootSignature.has_value())
+		m_pRootSignature.Swap(rootSignature.value());
+	else {
+		LOG_F(FATAL, "Failed to create root signature");
 		return false;
-	m_pRootSignature.Swap(rootSignature.second);
+	}
 
 	// Set viewport and scissor rects.
 	int width, height;

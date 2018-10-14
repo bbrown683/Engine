@@ -48,14 +48,6 @@ bool DriverVk::initialize() {
 		if (!HelperVk::hasRequiredInstanceExtensions())
 			return false;
 
-		std::vector<vk::LayerProperties> layerProperties = vk::enumerateInstanceLayerProperties();
-
-		vk::ApplicationInfo appInfo;
-		appInfo.apiVersion = VK_API_VERSION_1_0;
-
-		std::vector<const char*> instanceExtensions;
-		std::vector<const char*> instanceLayers;
-
 		SDL_SysWMinfo wmInfo;
 		SDL_VERSION(&wmInfo.version);
 		if (!SDL_GetWindowWMInfo(const_cast<SDL_Window*>(getWindow()), &wmInfo))
