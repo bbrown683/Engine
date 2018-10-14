@@ -29,9 +29,7 @@ SOFTWARE.
 #include <SDL2/SDL_syswm.h>
 #include "thirdparty/loguru/loguru.hpp"
 
-#include "renderable_vk.hpp"
 #include "helper_vk.hpp"
-#include "System.hpp"
 
 DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_ColorFormat = vk::Format::eUndefined;
@@ -43,8 +41,16 @@ DriverVk::DriverVk(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_ClearColor = { 0.1f, 0.3f, 0.5f, 1.0f };
 }
 
+DriverVk::~DriverVk() {
+	// Free image we allocated.
+	m_pDevice->destroyImage(m_pDepthStencilImage);
+	LOG_F(INFO, "Vulkan driver shutting down.");
+}
+
 bool DriverVk::initialize() {
 	try {
+		LOG_F(INFO, "Vulkan driver initializing.");
+
 		if (!HelperVk::hasRequiredInstanceExtensions())
 			return false;
 
@@ -104,11 +110,14 @@ bool DriverVk::selectGpu(uint32_t id) {
 			return false;
 
 		// Grab queue family index which supports graphics and surface operations.
-		if ((m_QueueFamilyIndex = HelperVk::selectQueueFamilyIndex(physicalDevice, m_pSurface.get())) == std::numeric_limits<uint32_t>::max())
+		if (auto queueFamilyIndex = HelperVk::selectQueueFamilyIndex(physicalDevice, m_pSurface.get()); queueFamilyIndex.has_value())
+			m_QueueFamilyIndex = queueFamilyIndex.value();
+		else {
+			LOG_F(FATAL, "Failed to find a queue family suitable for both graphics and surface operations.");
 			return false;
+		}
 
 		m_pDevice = HelperVk::createDevice(physicalDevice, m_QueueFamilyIndex);
-
 		m_ColorFormat = HelperVk::selectColorFormat(physicalDevice, m_pSurface.get());
 		vk::PresentModeKHR presentMode = HelperVk::selectPresentMode(physicalDevice, m_pSurface.get());
 		vk::SurfaceCapabilitiesKHR surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_pSurface.get());
@@ -121,10 +130,13 @@ bool DriverVk::selectGpu(uint32_t id) {
 			return false;
 
 		// Grab depth stencil format.
-		if ((m_DepthStencilFormat = HelperVk::selectDepthStencilFormat(physicalDevice)) == vk::Format::eUndefined) {
+		if (auto depthStencilFormat = HelperVk::selectDepthStencilFormat(physicalDevice); depthStencilFormat.has_value())
+			m_DepthStencilFormat = depthStencilFormat.value();
+		else {
 			LOG_F(FATAL, "Failed to find a suitable depth-stencil format.");
 			return false;
 		}
+
 
 		// Create image for our depth stencil view.
 		vk::ImageCreateInfo imageInfo;
@@ -135,23 +147,24 @@ bool DriverVk::selectGpu(uint32_t id) {
 		imageInfo.arrayLayers = 1;
 		imageInfo.samples = vk::SampleCountFlagBits::e1;
 		imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc;
-		vk::Image depthStencilImage = m_pDevice->createImage(imageInfo);
+		m_pDepthStencilImage = m_pDevice->createImage(imageInfo);
 
-		vk::MemoryRequirements memoryRequirements = m_pDevice->getImageMemoryRequirements(depthStencilImage);
-		uint32_t memoryTypeIndex = std::numeric_limits<uint32_t>::max();
-		if ((memoryTypeIndex = HelperVk::getMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits,
-			vk::MemoryPropertyFlagBits::eDeviceLocal)) == std::numeric_limits<uint32_t>::max())
-			return false;
-
+		vk::MemoryRequirements memoryRequirements = m_pDevice->getImageMemoryRequirements(m_pDepthStencilImage);
 		// Parameters for allocating image to memory.
 		vk::MemoryAllocateInfo memoryAllocateInfo;
 		memoryAllocateInfo.allocationSize = memoryRequirements.size;
-		memoryAllocateInfo.memoryTypeIndex = memoryTypeIndex;
+		if (auto memoryTypeIndex = HelperVk::getMemoryTypeIndex(physicalDevice, memoryRequirements.memoryTypeBits,
+			vk::MemoryPropertyFlagBits::eDeviceLocal); memoryTypeIndex.has_value()) {
+			memoryAllocateInfo.memoryTypeIndex = memoryTypeIndex.value();
+		} else {
+			LOG_F(FATAL, "Failed to find the memory type index associated with the depth-stencil image.");
+			return false;
+		}
 
 		// Bind image to memory and create a view for it.
-		m_pDepthStencilImage = m_pDevice->allocateMemoryUnique(memoryAllocateInfo);
-		m_pDevice->bindImageMemory(depthStencilImage, m_pDepthStencilImage.get(), 0);
-		m_pDepthStencilView = std::move(HelperVk::createImageViews(m_pDevice.get(), m_pSwapchain.get(), depthStencilImage, m_DepthStencilFormat,
+		m_pDepthStencilImageView = m_pDevice->allocateMemoryUnique(memoryAllocateInfo);
+		m_pDevice->bindImageMemory(m_pDepthStencilImage, m_pDepthStencilImageView.get(), 0);
+		m_pDepthStencilView = std::move(HelperVk::createImageViews(m_pDevice.get(), m_pSwapchain.get(), m_pDepthStencilImage, m_DepthStencilFormat,
 			vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil).front());
 		
 		// Grab a queue related to our device.
@@ -314,13 +327,6 @@ bool DriverVk::presentFrame() {
 	return true;
 }
 
-std::unique_ptr<Renderable> DriverVk::createRenderable() {
-    return std::make_unique<RenderableVk>(this);
-}
-
-void DriverVk::addRenderable(Renderable* renderable) {
-}
-
 const vk::UniqueDevice& DriverVk::getDevice() const {
     return m_pDevice;
 }
@@ -343,21 +349,4 @@ const vk::UniqueRenderPass & DriverVk::getRenderPass() const {
 
 const vk::UniqueSwapchainKHR& DriverVk::getSwapchain() const {
     return m_pSwapchain;
-}
-
-vk::UniqueShaderModule DriverVk::getShaderModuleFromFile(const char* pFilename) {
-	const char* pModuleName = std::strcat(const_cast<char*>(pFilename), ".spv");
-	auto file = System::readFile(pModuleName);
-	vk::ShaderModuleCreateInfo moduleInfo;
-	moduleInfo.pCode = reinterpret_cast<const uint32_t*>(file.first);
-	moduleInfo.codeSize = file.second;
-
-	return m_pDevice->createShaderModuleUnique(moduleInfo);
-}
-
-void DriverVk::createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties) {
-	vk::BufferCreateInfo bufferInfo;
-	bufferInfo.size = size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 }

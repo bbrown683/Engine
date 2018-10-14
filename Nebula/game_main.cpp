@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	RendererDriver driver = RendererDriver::eAutodetect;
 	for (const char* arg : args) {
 		if (std::strcmp(arg, "--dx") == 0)
-			driver = RendererDriver::eDirectX;
+			driver = RendererDriver::eDirectX12;
 		if (std::strcmp(arg, "--vk") == 0)
 			driver = RendererDriver::eVulkan;
 	}

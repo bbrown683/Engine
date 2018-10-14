@@ -22,15 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "renderable_dx.hpp"
+#include "renderable_dx12.hpp"
 
-#include "driver_dx.hpp"
+#include "driver_dx12.hpp"
 #include "thirdparty/d3dx12/d3dx12.h"
 #include "thirdparty/loguru/loguru.hpp"
 
-RenderableDX::RenderableDX(DriverDX* pDriver) : m_pDriver(pDriver) {}
+RenderableDX12::RenderableDX12(DriverDX12* pDriver) : m_pDriver(pDriver) {}
 
-bool RenderableDX::build() {
+RenderableDX12::~RenderableDX12() {
+
+}
+
+bool RenderableDX12::build() {
 	if (m_pBundle) {
 		if (FAILED(m_pBundle->Reset(m_pDriver->getBundledAllocator().Get(), nullptr)))
 			return false;
@@ -77,7 +81,7 @@ bool RenderableDX::build() {
 	return true;
 }
 
-bool RenderableDX::attachShader(const char* pFilename, ShaderStage stage) {
+bool RenderableDX12::attachShader(const char* pFilename, ShaderStage stage) {
 	ComPtr<ID3DBlob> pError;
 	auto path = L"C:\\Users\\Ben\\Ivy3\\Engine\\shaders\\shaders.hlsl";
 	if (FAILED(D3DCompileFromFile(path, nullptr, nullptr, "VSMain", "vs_5_0",
@@ -89,11 +93,11 @@ bool RenderableDX::attachShader(const char* pFilename, ShaderStage stage) {
 	return true;
 }
 
-bool RenderableDX::setIndices(std::vector<uint16_t> indices) {
+bool RenderableDX12::setIndices(std::vector<uint16_t> indices) {
     return false;
 }
 
-bool RenderableDX::setVertices(std::vector<Vertex> vertices) {
+bool RenderableDX12::setVertices(std::vector<Vertex> vertices) {
 	UINT vertexBufferSize = sizeof(Vertex) * vertices.size();
 	
 	if(FAILED(m_pDriver->getDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -115,10 +119,10 @@ bool RenderableDX::setVertices(std::vector<Vertex> vertices) {
     return true;
 }
 
-const ComPtr<ID3D12GraphicsCommandList>& RenderableDX::getBundle() const {
+const ComPtr<ID3D12GraphicsCommandList>& RenderableDX12::getBundle() const {
 	return m_pBundle;
 }
 
-const ComPtr<ID3D12PipelineState>& RenderableDX::getPipelineState() const {
+const ComPtr<ID3D12PipelineState>& RenderableDX12::getPipelineState() const {
 	return m_pPipelineState;
 }

@@ -25,9 +25,12 @@ SOFTWARE.
 #include "renderable_vk.hpp"
 
 #include "driver_vk.hpp"
-#include "System.hpp"
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
+
+RenderableVk::~RenderableVk() {
+
+}
 
 bool RenderableVk::build() {
 	vk::CommandBufferAllocateInfo allocateInfo;
@@ -43,7 +46,6 @@ bool RenderableVk::build() {
 	vk::CommandBufferBeginInfo beginInfo;
 	beginInfo.pInheritanceInfo = &inheritInfo;
 	m_pSecondaryBuffer->begin(beginInfo);
-	
 
 	m_pSecondaryBuffer->end();
 	return false;

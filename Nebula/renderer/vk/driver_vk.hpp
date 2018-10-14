@@ -37,22 +37,19 @@ class DriverVk : public Driver {
 public:
 	DriverVk() = default;
     DriverVk(const SDL_Window* pWindow);
+	~DriverVk();
 
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint32_t id) override;
 	bool prepareFrame() override;
     bool presentFrame() override;
-    std::unique_ptr<Renderable> createRenderable() override;
-	void addRenderable(Renderable* renderable) override;
     const vk::UniqueDevice& getDevice() const;
 	const vk::UniqueCommandPool& getCommandPool() const;
     const vk::UniqueCommandBuffer& getCommandBuffer() const;
 	const vk::UniqueFramebuffer& getCurrentFramebuffer() const;
 	const vk::UniqueRenderPass& getRenderPass() const;
     const vk::UniqueSwapchainKHR& getSwapchain() const;
-	vk::UniqueShaderModule getShaderModuleFromFile(const char* pFilename);
-	void createBuffer(vk::DeviceSize size, vk::BufferUsageFlagBits usage, vk::MemoryPropertyFlags properties);
 private:
     vk::UniqueInstance m_pInstance;
     std::vector<vk::PhysicalDevice> m_PhysicalDevices;
@@ -63,7 +60,8 @@ private:
     vk::UniqueSwapchainKHR m_pSwapchain;
 	std::vector<vk::UniqueImageView> m_pColorImageViews;
 	vk::UniqueImageView m_pDepthStencilView;
-	vk::UniqueDeviceMemory m_pDepthStencilImage;
+	vk::Image m_pDepthStencilImage;
+	vk::UniqueDeviceMemory m_pDepthStencilImageView;
 	vk::Queue m_Queue;
 	vk::UniqueCommandPool m_pCommandPool;
 	vk::UniqueCommandBuffer m_pCommandBuffer;

@@ -22,32 +22,30 @@
     <ClCompile Include="renderer\asset.cpp" />
     <ClCompile Include="game_config.cpp" />
     <ClCompile Include="renderer\driver.cpp" />
-    <ClCompile Include="renderer\dx\driver_dx.cpp" />
-    <ClCompile Include="renderer\dx\helper_dx.cpp" />
+    <ClCompile Include="renderer\dx12\driver_dx12.cpp" />
+    <ClCompile Include="renderer\dx12\helper_dx12.cpp" />
     <ClCompile Include="renderer\vk\helper_vk.cpp" />
     <ClCompile Include="renderer\obj_asset.cpp" />
-    <ClCompile Include="renderer\dx\renderable_dx.cpp" />
+    <ClCompile Include="renderer\dx12\renderable_dx12.cpp" />
     <ClCompile Include="renderer\vk\renderable_vk.cpp" />
     <ClCompile Include="renderer\renderer.cpp" />
     <ClCompile Include="game_main.cpp" />
     <ClCompile Include="renderer\vk\driver_vk.cpp" />
-    <ClCompile Include="System.cpp" />
     <ClCompile Include="util\thread_pool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="renderer\asset.hpp" />
     <ClInclude Include="game_config.hpp" />
-    <ClInclude Include="renderer\dx\driver_dx.hpp" />
+    <ClInclude Include="renderer\dx12\driver_dx12.hpp" />
     <ClInclude Include="renderer\driver.hpp" />
-    <ClInclude Include="renderer\dx\helper_dx.hpp" />
+    <ClInclude Include="renderer\dx12\helper_dx12.hpp" />
     <ClInclude Include="renderer\vk\helper_vk.hpp" />
     <ClInclude Include="renderer\obj_asset.hpp" />
     <ClInclude Include="renderer\renderable.hpp" />
-    <ClInclude Include="renderer\dx\renderable_dx.hpp" />
+    <ClInclude Include="renderer\dx12\renderable_dx12.hpp" />
     <ClInclude Include="renderer\vk\renderable_vk.hpp" />
     <ClInclude Include="renderer\renderer.hpp" />
     <ClInclude Include="renderer\vk\driver_vk.hpp" />
-    <ClInclude Include="System.hpp" />
     <ClInclude Include="util\thread_pool.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -56,7 +54,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <ProjectName>Nebula</ProjectName>
+    <ProjectName>nebula</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include "renderer.hpp"
-#include "renderer/dx/driver_dx.hpp"
+#include "renderer/dx12/driver_dx12.hpp"
 #include "renderer/vk/driver_vk.hpp"
 
 #include <SDL2/SDL.h>
@@ -33,7 +33,7 @@ Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
 
 bool Renderer::initialize() {
 	SDL_Init(SDL_INIT_VIDEO);
-	m_pWindow = SDL_CreateWindow("Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_SHOWN);
+	m_pWindow = SDL_CreateWindow("Nebula", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1024, 768, SDL_WINDOW_SHOWN);
 	if (!m_pWindow) {
 		LOG_F(FATAL, "SDL window is invalid!");
 		SDL_Quit();
@@ -42,9 +42,9 @@ bool Renderer::initialize() {
 
 	// TODO: If autodetect is enabled, we will need to enumerate 
 	// both drivers and select the best one.
-	if (m_Driver == RendererDriver::eDirectX) {
-		m_pDriver = std::make_unique<DriverDX>(m_pWindow);
-		LOG_F(INFO, "Direct3D12 driver was selected.");
+	if (m_Driver == RendererDriver::eDirectX12) {
+		m_pDriver = std::make_unique<DriverDX12>(m_pWindow);
+		LOG_F(INFO, "DirectX 12 driver was selected.");
 	} else if (m_Driver == RendererDriver::eVulkan) {
 		m_pDriver = std::make_unique<DriverVk>(m_pWindow);
 		LOG_F(INFO, "Vulkan driver was selected.");
@@ -57,7 +57,8 @@ bool Renderer::initialize() {
     }
 
     auto gpus = m_pDriver->getGpus();
-    if (!m_pDriver->selectGpu(gpus.front().id)) {
+	LOG_F(INFO, "Selected [%s] as the active rendering device.", gpus.front().name);
+	if (!m_pDriver->selectGpu(gpus.front().id)) {
 		LOG_F(FATAL, "Failed to select GPU for operation!");
         return false;
     }
@@ -76,7 +77,9 @@ bool Renderer::setRendererDriver(RendererDriver driver) {
     return false;
 }
 
-void Renderer::onKeyPress() {}
+void Renderer::onKeyPress() {
+
+}
 
 int Renderer::executeEventLoop() {
 	while (m_Running) {

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "driver_dx.hpp"
+#include "driver_dx12.hpp"
 
 #include <iostream>
 #include <SDL2/SDL.h>
@@ -32,10 +32,9 @@ SOFTWARE.
 #include "thirdparty/loguru/loguru.hpp"
 #include "thirdparty/glm/gtc/type_ptr.hpp"
 
-#include "helper_dx.hpp"
-#include "renderable_dx.hpp"
+#include "helper_dx12.hpp"
 
-DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
+DriverDX12::DriverDX12(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_FrameIndex = 0;
 	m_HeapSize = 0;
 	m_RenderTargetCount = 2;
@@ -43,27 +42,24 @@ DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_ClearColor = { 0.0f, 0.2f, 0.4f, 1.0f };
 }
 
-DriverDX::~DriverDX() {
+DriverDX12::~DriverDX12() {
 	CloseHandle(m_pFenceEvent);
-#ifdef _DEBUG
-	//m_pDxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
-#endif
+	LOG_F(INFO, "DirectX 12 driver shutting down.");
 }
 
-bool DriverDX::initialize() {
+bool DriverDX12::initialize() {
+	LOG_F(INFO, "DirectX 12 driver initializing.");
 #ifdef _DEBUG
 	if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pDebug))))
 		return false;
 	m_pDebug->EnableDebugLayer();
-	//m_pDebug->SetEnableGPUBasedValidation(true);
-	//m_pDebug->SetEnableSynchronizedCommandQueueValidation(true);
 
 	if (FAILED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_pDxgiDebug))))
 		return false;
 	m_pDxgiDebug->EnableLeakTrackingForThread();
 #endif
 	
-	if(auto factory = HelperDX::createFactory(0); factory.has_value())
+	if(auto factory = HelperDX12::createFactory(0); factory.has_value())
 		m_pFactory.Swap(factory.value());
 	else {
 		LOG_F(FATAL, "Failed to create DXGI Factory.");
@@ -73,7 +69,7 @@ bool DriverDX::initialize() {
 	LOG_F(INFO, "Enumerating Adapters:");
     // Enumerate each GPU or software rasterizer found on the system.
     // These will be used to select a GPU to render with
-	m_pAdapters = HelperDX::getAdapters(m_pFactory.Get());
+	m_pAdapters = HelperDX12::getAdapters(m_pFactory.Get());
 	if (m_pAdapters.empty())
 		return false;
 	for (size_t i = 0; i < m_pAdapters.size(); i++) {
@@ -100,7 +96,7 @@ bool DriverDX::initialize() {
     return true;
 }
 
-bool DriverDX::selectGpu(uint32_t id) {
+bool DriverDX12::selectGpu(uint32_t id) {
     // id Does not correlate to a proper GPU.
     if (id >= m_pAdapters.size())
         return false;
@@ -108,7 +104,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 	IDXGIAdapter1* adapter = m_pAdapters[id].Get();
 
 	// Create the main rendering device.
-	if (auto device = HelperDX::createDevice(adapter); device.has_value())
+	if (auto device = HelperDX12::createDevice(adapter); device.has_value())
 		m_pDevice.Swap(device.value());
 	else {
 		LOG_F(FATAL, "Failed to create device.");
@@ -116,7 +112,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 	}
 
 	// Create the command queue to submit our command lists to.
-	if (auto commandQueue = HelperDX::createCommandQueue(m_pDevice.Get()); commandQueue.has_value())
+	if (auto commandQueue = HelperDX12::createCommandQueue(m_pDevice.Get()); commandQueue.has_value())
 		m_pCommandQueue.Swap(commandQueue.value());
 	else {
 		LOG_F(FATAL, "Failed to create command queue");
@@ -124,7 +120,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 	}
 
 	// Create the command allocator for our primary command list to submit to.
-	if (auto commandAllocator = HelperDX::createCommandAllocator(m_pDevice.Get()); commandAllocator.has_value())
+	if (auto commandAllocator = HelperDX12::createCommandAllocator(m_pDevice.Get()); commandAllocator.has_value())
 		m_pCommandAllocator.Swap(commandAllocator.value());
 	else {
 		LOG_F(FATAL, "Failed to create command allocator.");
@@ -132,14 +128,14 @@ bool DriverDX::selectGpu(uint32_t id) {
 	}
 
 	// Create the command allocator for our primary command list to submit to.
-	if (auto bundleAllocator = HelperDX::createCommandAllocator(m_pDevice.Get(), D3D12_COMMAND_LIST_TYPE_BUNDLE); bundleAllocator.has_value())
+	if (auto bundleAllocator = HelperDX12::createCommandAllocator(m_pDevice.Get(), D3D12_COMMAND_LIST_TYPE_BUNDLE); bundleAllocator.has_value())
 		m_pBundleAllocator.Swap(bundleAllocator.value());
 	else {
 		LOG_F(FATAL, "Failed to create bundle allocator.");
 		return false;
 	}
 
-	if (auto commandList = HelperDX::createCommandList(m_pDevice.Get(), m_pCommandAllocator.Get()); commandList.has_value())
+	if (auto commandList = HelperDX12::createCommandList(m_pDevice.Get(), m_pCommandAllocator.Get()); commandList.has_value())
 		m_pCommandList.Swap(commandList.value());
 	else {
 		LOG_F(FATAL, "Failed to create primary command list.");
@@ -155,7 +151,7 @@ bool DriverDX::selectGpu(uint32_t id) {
         return false;
 	HWND hWnd = wmInfo.info.win.window;
 
-	if (auto swapchain = HelperDX::createSwapchain(m_pFactory.Get(), m_pCommandQueue.Get(), hWnd, m_RenderTargetCount); swapchain.has_value())
+	if (auto swapchain = HelperDX12::createSwapchain(m_pFactory.Get(), m_pCommandQueue.Get(), hWnd, m_RenderTargetCount); swapchain.has_value())
 		swapchain.value().As(&m_pSwapchain);
 	else {
 		LOG_F(FATAL, "Failed to create DXGI Swapchain");
@@ -164,7 +160,7 @@ bool DriverDX::selectGpu(uint32_t id) {
 
 	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 
-	if (auto rootSignature = HelperDX::createRootSignature(m_pDevice.Get()); rootSignature.has_value())
+	if (auto rootSignature = HelperDX12::createRootSignature(m_pDevice.Get()); rootSignature.has_value())
 		m_pRootSignature.Swap(rootSignature.value());
 	else {
 		LOG_F(FATAL, "Failed to create root signature");
@@ -205,11 +201,11 @@ bool DriverDX::selectGpu(uint32_t id) {
 		if (FAILED(HRESULT_FROM_WIN32(GetLastError())))
 			return false;
 	}
-	LOG_F(INFO, "DirectX driver was successfully initialized.");
+	LOG_F(INFO, "DirectX 12 driver was successfully initialized.");
 	return true;
 }
 
-bool DriverDX::prepareFrame() {
+bool DriverDX12::prepareFrame() {
 	if (FAILED(m_pCommandAllocator->Reset()))
 		return false;
 	if (FAILED(m_pCommandList->Reset(m_pCommandAllocator.Get(), nullptr)))
@@ -228,10 +224,6 @@ bool DriverDX::prepareFrame() {
 	m_pCommandList->OMSetRenderTargets(1, &descriptorHandle, false, nullptr);
 	m_pCommandList->ClearRenderTargetView(descriptorHandle, glm::value_ptr(m_ClearColor), 0, nullptr);
 
-	// Execute bundles for each renderable.
-	for (size_t i = 0; i < m_pRenderables.size(); i++)
-		m_pCommandList->ExecuteBundle(m_pRenderables[i]->getBundle().Get());
-
 	m_pCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_pRenderTargets[m_FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PRESENT));
 
@@ -240,7 +232,7 @@ bool DriverDX::prepareFrame() {
 	return true;
 }
 
-bool DriverDX::presentFrame() {
+bool DriverDX12::presentFrame() {
 	std::array<ID3D12CommandList*, 1> commandLists = { m_pCommandList.Get() };
 	m_pCommandQueue->ExecuteCommandLists(commandLists.size(), commandLists.data());
 
@@ -264,31 +256,23 @@ bool DriverDX::presentFrame() {
 	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 	return true;
 }
-	
-std::unique_ptr<Renderable> DriverDX::createRenderable() {
-    return std::make_unique<RenderableDX>(this);
-}
 
-void DriverDX::addRenderable(Renderable* renderable) {
-	m_pRenderables.push_back(dynamic_cast<RenderableDX*>(renderable));
-}
-
-const ComPtr<ID3D12Device>& DriverDX::getDevice() const {
+const ComPtr<ID3D12Device>& DriverDX12::getDevice() const {
     return m_pDevice;
 }
 
-const ComPtr<ID3D12GraphicsCommandList>& DriverDX::getCommandList() const {
+const ComPtr<ID3D12GraphicsCommandList>& DriverDX12::getCommandList() const {
 	return m_pCommandList;
 }
 
-const ComPtr<ID3D12CommandAllocator>& DriverDX::getCommandAllocator() const {
+const ComPtr<ID3D12CommandAllocator>& DriverDX12::getCommandAllocator() const {
 	return m_pCommandAllocator;
 }
 
-const ComPtr<ID3D12CommandAllocator>& DriverDX::getBundledAllocator() const {
+const ComPtr<ID3D12CommandAllocator>& DriverDX12::getBundledAllocator() const {
 	return m_pBundleAllocator;
 }
 
-const ComPtr<ID3D12RootSignature>& DriverDX::getRootSignature() const {
+const ComPtr<ID3D12RootSignature>& DriverDX12::getRootSignature() const {
 	return m_pRootSignature;
 }

@@ -37,6 +37,7 @@ class DriverVk;
 class RenderableVk : public Renderable {
 public:
     RenderableVk(DriverVk* pDriver);
+	~RenderableVk();
     bool build() override;
     bool attachShader(const char* pFilename, ShaderStage stage) override;
     bool setIndices(std::vector<uint16_t> indices) override;

@@ -9,7 +9,7 @@
 #include <wrl/client.h>
 using Microsoft::WRL::ComPtr;
 
-struct HelperDX {
+struct HelperDX12 {
 public:
 	static std::optional<ComPtr<IDXGIFactory5>> createFactory(UINT flags);
 	static std::vector<ComPtr<IDXGIAdapter1>> getAdapters(IDXGIFactory5* pFactory);

@@ -38,19 +38,17 @@ using Microsoft::WRL::ComPtr;
 #include "renderer/driver.hpp"
 #include "thirdparty/glm/glm.hpp"
 
-class RenderableDX;
-class DriverDX : public Driver {
+class RenderableDX12;
+class DriverDX12 : public Driver {
 public:
-    DriverDX(const SDL_Window* pWindow);
-	~DriverDX();
+    DriverDX12(const SDL_Window* pWindow);
+	~DriverDX12();
 
     // Inherited via IDriver
     bool initialize() override;
     bool selectGpu(uint32_t id) override;
 	bool prepareFrame() override;
     bool presentFrame() override;
-    std::unique_ptr<Renderable> createRenderable() override;
-	void addRenderable(Renderable* renderable) override;
     const ComPtr<ID3D12Device>& getDevice() const;
 	const ComPtr<ID3D12GraphicsCommandList>& getCommandList() const;
 	const ComPtr<ID3D12CommandAllocator>& getCommandAllocator() const;
@@ -75,7 +73,6 @@ private:
 	D3D12_RECT m_ScissorRect;
 	ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
 	ComPtr<ID3D12Fence> m_pFence;
-	std::vector<RenderableDX*> m_pRenderables;
 	HANDLE m_pFenceEvent;
 	UINT m_FenceValue;
 	UINT m_FrameIndex; 

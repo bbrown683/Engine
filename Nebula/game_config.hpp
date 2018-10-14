@@ -39,6 +39,16 @@ enum class TextureFiltering {
 	e16x,
 };
 
+enum class Samples {
+	eNone,
+	e2x,
+	e4x,
+	e8x,
+	e16x,
+	e32x,
+	e64x
+};
+
 enum class WindowMode {
 	eWindowed,
 	eFullscreen,

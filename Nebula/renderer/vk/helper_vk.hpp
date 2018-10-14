@@ -1,6 +1,7 @@
 #pragma once
 
 #define NOMINMAX
+#include <optional>
 
 #include <SDL2/SDL_config.h>
 #include <SDL2/SDL_syswm.h>
@@ -29,11 +30,11 @@ public:
 	static std::vector<vk::UniqueImageView> createImageViews(vk::Device device, vk::SwapchainKHR swapchain, vk::Image image = nullptr, vk::Format format = vk::Format::eR8G8B8A8Unorm,
 		vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor);
 	static vk::UniqueShaderModule createShaderModule(vk::Device device, const char* pFilePath);
-	static uint32_t selectQueueFamilyIndex(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface);
+	static std::optional<uint32_t> selectQueueFamilyIndex(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface);
 	static vk::Format selectColorFormat(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface);
-	static vk::Format selectDepthStencilFormat(vk::PhysicalDevice physicalDevice);
+	static std::optional<vk::Format> selectDepthStencilFormat(vk::PhysicalDevice physicalDevice);
 	static vk::PresentModeKHR selectPresentMode(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface, bool vsync = true, bool tripleBuffering = false, 
 		bool tearing = false);
 	static vk::SampleCountFlagBits getMaxUsableSampleCount(vk::PhysicalDevice physicalDevice);
-	static uint32_t getMemoryTypeIndex(vk::PhysicalDevice physicalDevice, uint32_t typeBits, vk::MemoryPropertyFlags properties);
+	static std::optional<uint32_t> getMemoryTypeIndex(vk::PhysicalDevice physicalDevice, uint32_t typeBits, vk::MemoryPropertyFlags properties);
 };

@@ -8,7 +8,7 @@
 bool HelperVk::hasRequiredInstanceExtensions() {
 	std::vector<vk::ExtensionProperties> extensionProperties = vk::enumerateInstanceExtensionProperties();
 
-	LOG_F(INFO, "Enumerating Vulkan extensions: ");
+	LOG_F(INFO, "Enumerating Vulkan instance extensions: ");
 	bool surfaceKHRSupport = false, wmKHRSupport = false;
 	for (vk::ExtensionProperties extension : extensionProperties) {
 		LOG_F(INFO, "\t%s", extension.extensionName);
@@ -35,12 +35,72 @@ bool HelperVk::hasRequiredInstanceExtensions() {
 }
 
 bool HelperVk::hasRequiredDeviceExtensionsAndFeatures(vk::PhysicalDevice physicalDevice) {
-	std::vector<vk::ExtensionProperties> deviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-	vk::PhysicalDeviceFeatures features = physicalDevice.getFeatures();
+	// Grabbing for logging purposes.
+	vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
 
+	vk::PhysicalDeviceFeatures features = physicalDevice.getFeatures();
+	LOG_F(INFO, "Enumerating Vulkan features for [%s]", properties.deviceName);
+	LOG_F(INFO, "\talphaToOne: %u", features.alphaToOne);
+	LOG_F(INFO, "\tdepthBiasClamp: %u", features.depthBiasClamp);
+	LOG_F(INFO, "\tdepthBounds: %u", features.depthBounds);
+	LOG_F(INFO, "\tdrawIndirectFirstInstance: %u", features.drawIndirectFirstInstance);
+	LOG_F(INFO, "\tdualSrcBlend: %u", features.dualSrcBlend);
+	LOG_F(INFO, "\tfillModeNonSolid: %u", features.fillModeNonSolid);
+	LOG_F(INFO, "\tfragmentStoresAndAtomics: %u", features.fragmentStoresAndAtomics);
+	LOG_F(INFO, "\tfullDrawIndexUint32: %u", features.fullDrawIndexUint32);
+	LOG_F(INFO, "\tgeometryShader: %u", features.geometryShader);
+	LOG_F(INFO, "\timageCubeArray: %u", features.imageCubeArray);
+	LOG_F(INFO, "\tindependentBlend: %u", features.independentBlend);
+	LOG_F(INFO, "\tinheritedQueries: %u", features.inheritedQueries);
+	LOG_F(INFO, "\tlargePoints: %u", features.largePoints);
+	LOG_F(INFO, "\tlogicOp: %u", features.logicOp);
+	LOG_F(INFO, "\tmultiDrawIndirect: %u", features.multiDrawIndirect);	
+	LOG_F(INFO, "\tmultiViewport: %u", features.multiViewport);
+	LOG_F(INFO, "\tocclusionQueryPrecise: %u", features.occlusionQueryPrecise);
+	LOG_F(INFO, "\tpipelineStatisticsQuery: %u", features.pipelineStatisticsQuery);
+	LOG_F(INFO, "\trobustBufferAccess: %u", features.robustBufferAccess);
+	LOG_F(INFO, "\tsamplerAnisotropy: %u", features.samplerAnisotropy);
+	LOG_F(INFO, "\tsampleRateShading: %u", features.sampleRateShading);	
+	LOG_F(INFO, "\tshaderClipDistance: %u", features.shaderClipDistance);
+	LOG_F(INFO, "\tshaderCullDistance: %u", features.shaderCullDistance);
+	LOG_F(INFO, "\tshaderFloat64: %u", features.shaderFloat64);
+	LOG_F(INFO, "\tshaderImageGatherExtended: %u", features.shaderImageGatherExtended);
+	LOG_F(INFO, "\tshaderInt16: %u", features.shaderInt16);
+	LOG_F(INFO, "\tshaderInt64: %u", features.shaderInt64);
+	LOG_F(INFO, "\tshaderResourceMinLod: %u", features.shaderResourceMinLod);
+	LOG_F(INFO, "\tshaderResourceResidency: %u", features.shaderResourceResidency);
+	LOG_F(INFO, "\tshaderSampledImageArrayDynamicIndexing: %u", features.shaderSampledImageArrayDynamicIndexing);
+	LOG_F(INFO, "\tshaderStorageBufferArrayDynamicIndexing: %u", features.shaderStorageBufferArrayDynamicIndexing);
+	LOG_F(INFO, "\tshaderStorageImageArrayDynamicIndexing: %u", features.shaderStorageImageArrayDynamicIndexing);
+	LOG_F(INFO, "\tshaderStorageImageExtendedFormats: %u", features.shaderStorageImageExtendedFormats);
+	LOG_F(INFO, "\tshaderStorageImageMultisample: %u", features.shaderStorageImageMultisample);
+	LOG_F(INFO, "\tshaderStorageImageReadWithoutFormat: %u", features.shaderStorageImageReadWithoutFormat);
+	LOG_F(INFO, "\tshaderStorageImageWriteWithoutFormat: %u", features.shaderStorageImageWriteWithoutFormat);
+	LOG_F(INFO, "\tshaderTessellationAndGeometryPointSize: %u", features.shaderTessellationAndGeometryPointSize);
+	LOG_F(INFO, "\tshaderUniformBufferArrayDynamicIndexing: %u", features.shaderUniformBufferArrayDynamicIndexing);
+	LOG_F(INFO, "\tsparseBinding: %u", features.sparseBinding);
+	LOG_F(INFO, "\tsparseResidency16Samples: %u", features.sparseResidency16Samples);
+	LOG_F(INFO, "\tsparseResidency2Samples: %u", features.sparseResidency2Samples);
+	LOG_F(INFO, "\tsparseResidency4Samples: %u", features.sparseResidency4Samples);
+	LOG_F(INFO, "\tsparseResidency8Samples: %u", features.sparseResidency8Samples);
+	LOG_F(INFO, "\tsparseResidencyAliased: %u", features.sparseResidencyAliased);
+	LOG_F(INFO, "\tsparseResidencyBuffer: %u", features.sparseResidencyBuffer);
+	LOG_F(INFO, "\tsparseResidencyImage2D: %u", features.sparseResidencyImage2D);
+	LOG_F(INFO, "\tsparseResidencyImage3D: %u", features.sparseResidencyImage3D);
+	LOG_F(INFO, "\ttessellationShader: %u", features.tessellationShader);
+	LOG_F(INFO, "\ttextureCompressionASTC_LDR: %u", features.textureCompressionASTC_LDR);
+	LOG_F(INFO, "\ttextureCompressionBC: %u", features.textureCompressionBC);
+	LOG_F(INFO, "\ttextureCompressionETC2: %u", features.textureCompressionETC2);
+	LOG_F(INFO, "\tvariableMultisampleRate: %u", features.variableMultisampleRate);
+	LOG_F(INFO, "\tvertexPipelineStoresAndAtomics: %u", features.vertexPipelineStoresAndAtomics);
+	LOG_F(INFO, "\twideLines: %u", features.wideLines);
+
+	std::vector<vk::ExtensionProperties> deviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+	LOG_F(INFO, "Enumerating Vulkan device extensions for [%s]", properties.deviceName);
 	// Check for VK_KHR_swapchain extension.
 	bool swapchainKHRSupport = false;
 	for (vk::ExtensionProperties deviceExtension : deviceExtensions) {
+		LOG_F(INFO, "\t%s ", deviceExtension.extensionName);
 		if (std::strcmp(deviceExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0)
 			swapchainKHRSupport = true;
 	}
@@ -177,14 +237,14 @@ std::vector<vk::UniqueImageView> HelperVk::createImageViews(vk::Device device, v
 	return imageViews;
 }
 
-uint32_t HelperVk::selectQueueFamilyIndex(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface) {
+std::optional<uint32_t> HelperVk::selectQueueFamilyIndex(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface) {
 	std::vector<vk::QueueFamilyProperties> queueFamilies = physicalDevice.getQueueFamilyProperties();
 	for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilies.size()); i++) {
 		// Must be both a graphics queue, and support presenting to a surface.
 		if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics && physicalDevice.getSurfaceSupportKHR(i, surface))
 			return i;
 	}
-	return std::numeric_limits<uint32_t>::max();
+	return {};
 }
 
 vk::Format HelperVk::selectColorFormat(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface) {
@@ -206,7 +266,7 @@ vk::Format HelperVk::selectColorFormat(vk::PhysicalDevice physicalDevice, vk::Su
 	return format;
 }
 
-vk::Format HelperVk::selectDepthStencilFormat(vk::PhysicalDevice physicalDevice) {
+std::optional<vk::Format> HelperVk::selectDepthStencilFormat(vk::PhysicalDevice physicalDevice) {
 	// Since all depth formats may be optional, we need to find a suitable depth format to use
 	// Start with the highest precision packed format
 	std::vector<vk::Format> depthFormats = {
@@ -223,7 +283,7 @@ vk::Format HelperVk::selectDepthStencilFormat(vk::PhysicalDevice physicalDevice)
 		if (properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
 			return format;
 	}
-	return vk::Format::eUndefined;
+	return {};
 }
 
 vk::PresentModeKHR HelperVk::selectPresentMode(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface, bool vsync, bool tripleBuffering, bool tearing) {
@@ -267,7 +327,7 @@ vk::SampleCountFlagBits HelperVk::getMaxUsableSampleCount(vk::PhysicalDevice phy
 	else return vk::SampleCountFlagBits::e1;
 }
 
-uint32_t HelperVk::getMemoryTypeIndex(vk::PhysicalDevice physicalDevice, uint32_t typeBits, vk::MemoryPropertyFlags properties) {
+std::optional<uint32_t> HelperVk::getMemoryTypeIndex(vk::PhysicalDevice physicalDevice, uint32_t typeBits, vk::MemoryPropertyFlags properties) {
 	vk::PhysicalDeviceMemoryProperties memororyProperties = physicalDevice.getMemoryProperties();
 	for (uint32_t i = 0; i < memororyProperties.memoryTypeCount; i++) {
 		if ((typeBits & 1) == 1) {
@@ -277,7 +337,7 @@ uint32_t HelperVk::getMemoryTypeIndex(vk::PhysicalDevice physicalDevice, uint32_
 		}
 		typeBits >>= 1;
 	}
-	return std::numeric_limits<uint32_t>::max();
+	return {};
 }
 
 vk::UniqueShaderModule HelperVk::createShaderModule(vk::Device device, const char* pFilePath) {
