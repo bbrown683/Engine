@@ -26,8 +26,8 @@ SOFTWARE.
 
 #include <memory>
 
-#include "Driver.hpp"
-#include "Renderable.hpp"
+#include "driver.hpp"
+#include "renderable.hpp"
 
 enum class RendererDriver {
     /// Renderer will select the driver to use.
@@ -38,20 +38,6 @@ enum class RendererDriver {
     eVulkan,
 };
 
-enum class WindowMode {
-    eBorderless,
-    eFullscreen,
-    eWindowed,
-};
-
-enum class TextureFiltering {
-    eNone,
-    e2x,
-    e4x,
-    e8x,
-    e16x,
-};
-
 struct SDL_Window;
 class Renderer {
 public:
@@ -59,8 +45,6 @@ public:
     /// After instantiation you will need to call createRendererForWindow
     /// to complete object creation.
     explicit Renderer(RendererDriver driver);
-
-	virtual ~Renderer();
 
     /// This function initializes the renderer class for the given GLFW window.
     /// This must be the first function called after creating the object. This 
@@ -79,7 +63,7 @@ public:
     bool setRendererDriver(RendererDriver driver);
 
     /// 
-    virtual void onKeyPress();
+    void onKeyPress();
 
 	/// Will call the event loop for this renderer.
 	int executeEventLoop();

@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "RenderableDX.hpp"
+#include "renderable_dx.hpp"
 
-#include "DriverDX.hpp"
+#include "driver_dx.hpp"
 #include "thirdparty/d3dx12/d3dx12.h"
 #include "thirdparty/loguru/loguru.hpp"
 

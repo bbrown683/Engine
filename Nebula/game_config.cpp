@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include "game_config.hpp"
 
 void Config::setAudioMasterVolume(int volume) {
 	this->volume = volume;

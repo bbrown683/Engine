@@ -22,20 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Renderer.hpp"
-#include "DriverDX.hpp"
-#include "DriverVk.hpp"
-#include "ObjAsset.hpp"
-#include "thirdparty/loguru/loguru.hpp"
+#include "renderer.hpp"
+#include "renderer/dx/driver_dx.hpp"
+#include "renderer/vk/driver_vk.hpp"
 
 #include <SDL2/SDL.h>
+#include "thirdparty/loguru/loguru.hpp"
 
 Renderer::Renderer(RendererDriver driver) : m_Driver(driver) {}
-
-Renderer::~Renderer() {
-	SDL_DestroyWindow(m_pWindow);
-	SDL_Quit();
-}
 
 bool Renderer::initialize() {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -85,23 +79,6 @@ bool Renderer::setRendererDriver(RendererDriver driver) {
 void Renderer::onKeyPress() {}
 
 int Renderer::executeEventLoop() {
-	auto renderable = m_pDriver->createRenderable();
-	renderable->attachShader("", ShaderStage::Fragment);
-
-	float m_aspectRatio = static_cast<float>(1024) / static_cast<float>(768);
-
-	std::vector<Vertex> vertices = {
-			{ { 0.0f, 0.25f * m_aspectRatio, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-			{ { 0.25f, -0.25f * m_aspectRatio, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-			{ { -0.25f, -0.25f * m_aspectRatio, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
-	};
-	renderable->setVertices(vertices);
-	renderable->build();
-	m_pDriver->addRenderable(renderable.get());
-	ObjAsset obj = ObjAsset(m_pDriver.get());
-	bool result = obj.load("C:\\Users\\Ben\\Ivy3\\Engine\\assets\\cube.obj");
-	if (!result)
-		LOG_F(WARNING, "Failed to load cube.obj");
 	while (m_Running) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event) != false) {

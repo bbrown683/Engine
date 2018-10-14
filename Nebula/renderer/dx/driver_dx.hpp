@@ -35,7 +35,7 @@ SOFTWARE.
 #include <wrl/client.h>
 using Microsoft::WRL::ComPtr;
 
-#include "Driver.hpp"
+#include "renderer/driver.hpp"
 #include "thirdparty/glm/glm.hpp"
 
 class RenderableDX;

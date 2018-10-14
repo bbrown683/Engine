@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Asset.hpp"
+#include "asset.hpp"
 
 class ObjAsset : public Asset {
 public:

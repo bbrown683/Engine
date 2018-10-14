@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "DriverDX.hpp"
+#include "driver_dx.hpp"
 
 #include <iostream>
 #include <SDL2/SDL.h>
@@ -32,8 +32,8 @@ SOFTWARE.
 #include "thirdparty/loguru/loguru.hpp"
 #include "thirdparty/glm/gtc/type_ptr.hpp"
 
-#include "HelperDX.hpp"
-#include "RenderableDX.hpp"
+#include "helper_dx.hpp"
+#include "renderable_dx.hpp"
 
 DriverDX::DriverDX(const SDL_Window* pWindow) : Driver(pWindow) {
 	m_FrameIndex = 0;

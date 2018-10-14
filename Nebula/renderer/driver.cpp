@@ -22,34 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#pragma once
+#include "driver.hpp"
 
-#include <vector>
-#include <d3d12.h>
-#include <d3dcompiler.h>
-#include <dxgi1_6.h>
-#include <dxgidebug.h>
-#include <wrl/client.h>
-using Microsoft::WRL::ComPtr;
+#include <iostream>
 
-#include "Renderable.hpp"
+Driver::Driver(const SDL_Window* pWindow) : m_pWindow(pWindow) {
+    m_ThreadCount = std::thread::hardware_concurrency();
+    m_ThreadPool = std::make_unique<ThreadPool>(m_ThreadCount);
+}
 
-class DriverDX;
-class RenderableDX : public Renderable {
-public:
-    RenderableDX(DriverDX* pDriver);
-    bool build() override;
-    bool attachShader(const char* pFilename, ShaderStage stage) override;
-    bool setIndices(std::vector<uint16_t> indices) override;
-    bool setVertices(std::vector<Vertex> vertices) override;
-	const ComPtr<ID3D12GraphicsCommandList>& getBundle() const;
-	const ComPtr<ID3D12PipelineState>& getPipelineState() const;
-private:
-    DriverDX* m_pDriver;
-	ComPtr<ID3D12GraphicsCommandList> m_pBundle;
-	ComPtr<ID3D12PipelineState> m_pPipelineState;
-	ComPtr<ID3DBlob> m_pVertexShader;
-	ComPtr<ID3DBlob> m_pPixelShader; 
-	ComPtr<ID3D12Resource> m_pVertexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
-};
+const std::vector<Gpu>& Driver::getGpus() {
+    return m_Gpus;
+}
+
+const SDL_Window* Driver::getWindow() {
+    return m_pWindow;
+}
+
+void Driver::addGpu(Gpu gpu) {
+    m_Gpus.push_back(gpu);
+}
+
+uint32_t Driver::getThreadCount() {
+    return m_ThreadCount;
+}
+
+ThreadPool* Driver::getThreadPool() {
+    return m_ThreadPool.get();
+}

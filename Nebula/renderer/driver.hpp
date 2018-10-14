@@ -22,11 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-/// Note:
-/// Vsync: Lock fps on double buffering.
-/// Non-vsync double buffering: Unlocked double buffering.
-/// Triple buffering: Vsync with an additional buffer.
-
 #pragma once
 
 #include <cstdint>
@@ -34,7 +29,7 @@ SOFTWARE.
 #include <thread>
 #include <vector>
 
-#include "ThreadPool.hpp"
+#include "util/thread_pool.hpp"
 
 struct Gpu {
     uint32_t id;
@@ -55,14 +50,6 @@ struct Display {
 	uint32_t id;
 	char name[32];
 	std::vector<DisplayMode> modes;
-};
-
-enum class MaxAnisotropy {
-    eNone,
-    e2x,
-    e4x,
-    e8x,
-    e16x,
 };
 
 struct SDL_Window;

@@ -24,8 +24,7 @@ SOFTWARE.
 
 #include <vector>
 
-#include "EngineRenderer.hpp"
-#include "HelperDX.hpp"
+#include "renderer/renderer.hpp"
 
 #pragma warning(push)
 #pragma warning(disable : 4018)
@@ -57,9 +56,8 @@ int main(int argc, char** argv) {
 			driver = RendererDriver::eVulkan;
 	}
 
-	EngineRenderer engine(driver);
+	Renderer engine(driver);
 	if (!engine.initialize())
 		return false;
-
 	return engine.executeEventLoop();
 }

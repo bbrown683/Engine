@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "RenderableVk.hpp"
+#include "renderable_vk.hpp"
 
-#include "DriverVk.hpp"
+#include "driver_vk.hpp"
 #include "System.hpp"
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}

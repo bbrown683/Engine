@@ -29,21 +29,9 @@ SOFTWARE.
 #include <unordered_map>
 #include <vector>
 
-
-#include <SDL2/SDL_config.h>
-#ifdef SDL_VIDEO_DRIVER_MIR
-#define VK_USE_PLATFORM_MIR_KHR
-#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
-#define VK_USE_PLATFORM_WAYLAND_KHR
-#elif defined(SDL_VIDEO_DRIVER_WINDOWS)
-#define VK_USE_PLATFORM_WIN32_KHR
-#elif defined(SDL_VIDEO_DRIVER_X11)
-#define VK_USE_PLATFORM_XLIB_KHR
-#endif
-
 #include <vulkan/vulkan.hpp>
 
-#include "Driver.hpp"
+#include "renderer/driver.hpp"
 
 class DriverVk : public Driver {
 public:
@@ -73,14 +61,18 @@ private:
     vk::UniqueFence m_pFence;
 	vk::UniqueSemaphore m_pSemaphore;
     vk::UniqueSwapchainKHR m_pSwapchain;
-	std::vector<vk::UniqueImageView> m_pImageViews;
+	std::vector<vk::UniqueImageView> m_pColorImageViews;
+	vk::UniqueImageView m_pDepthStencilView;
+	vk::UniqueDeviceMemory m_pDepthStencilImage;
 	vk::Queue m_Queue;
 	vk::UniqueCommandPool m_pCommandPool;
 	vk::UniqueCommandBuffer m_pCommandBuffer;
 	std::vector<vk::UniqueFramebuffer> m_pFramebuffers;
 	vk::UniqueRenderPass m_pRenderPass;
     uint32_t m_QueueFamilyIndex;
-	vk::Format m_ImageFormat;
+	vk::Format m_ColorFormat;
+	vk::Format m_DepthStencilFormat;
+	vk::Extent2D m_SurfaceDimensions;
     bool anisotropy;
     float maxAnisotropy;
 	uint32_t m_ImageCount;

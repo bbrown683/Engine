@@ -1,4 +1,4 @@
-#include "HelperDX.hpp"
+#include "helper_dx.hpp"
 
 #include "thirdparty/d3dx12/d3dx12.h"
 

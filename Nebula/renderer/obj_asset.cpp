@@ -1,4 +1,4 @@
-#include "ObjAsset.hpp"
+#include "obj_asset.hpp"
 
 #include "thirdparty/loguru/loguru.hpp"
 #include "thirdparty/tinyobjloader/tiny_obj_loader.h"

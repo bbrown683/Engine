@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "ThreadPool.hpp"
+#include "thread_pool.hpp"
 
 ThreadPool::ThreadPool(uint32_t threadCount) {
     for (uint32_t i = 0; i < threadCount; i++)

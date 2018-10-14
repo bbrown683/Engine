@@ -1,5 +1,5 @@
-#include "Asset.hpp"
-#include "Driver.hpp"
+#include "asset.hpp"
+#include "driver.hpp"
 
 Asset::Asset(Driver* pDriver) : m_pDriver(pDriver) {}
 

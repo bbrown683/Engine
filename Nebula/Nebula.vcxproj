@@ -19,36 +19,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Asset.cpp" />
-    <ClCompile Include="Config.cpp" />
-    <ClCompile Include="Driver.cpp" />
-    <ClCompile Include="DriverDX.cpp" />
-    <ClCompile Include="EngineRenderer.cpp" />
-    <ClCompile Include="HelperDX.cpp" />
-    <ClCompile Include="ObjAsset.cpp" />
-    <ClCompile Include="RenderableDX.cpp" />
-    <ClCompile Include="RenderableVk.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="Source.cpp" />
-    <ClCompile Include="DriverVk.cpp" />
+    <ClCompile Include="renderer\asset.cpp" />
+    <ClCompile Include="game_config.cpp" />
+    <ClCompile Include="renderer\driver.cpp" />
+    <ClCompile Include="renderer\dx\driver_dx.cpp" />
+    <ClCompile Include="renderer\dx\helper_dx.cpp" />
+    <ClCompile Include="renderer\vk\helper_vk.cpp" />
+    <ClCompile Include="renderer\obj_asset.cpp" />
+    <ClCompile Include="renderer\dx\renderable_dx.cpp" />
+    <ClCompile Include="renderer\vk\renderable_vk.cpp" />
+    <ClCompile Include="renderer\renderer.cpp" />
+    <ClCompile Include="game_main.cpp" />
+    <ClCompile Include="renderer\vk\driver_vk.cpp" />
     <ClCompile Include="System.cpp" />
-    <ClCompile Include="ThreadPool.cpp" />
+    <ClCompile Include="util\thread_pool.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Asset.hpp" />
-    <ClInclude Include="Config.hpp" />
-    <ClInclude Include="DriverDX.hpp" />
-    <ClInclude Include="Driver.hpp" />
-    <ClInclude Include="HelperDX.hpp" />
-    <ClInclude Include="EngineRenderer.hpp" />
-    <ClInclude Include="ObjAsset.hpp" />
-    <ClInclude Include="Renderable.hpp" />
-    <ClInclude Include="RenderableDX.hpp" />
-    <ClInclude Include="RenderableVk.hpp" />
-    <ClInclude Include="Renderer.hpp" />
-    <ClInclude Include="DriverVk.hpp" />
+    <ClInclude Include="renderer\asset.hpp" />
+    <ClInclude Include="game_config.hpp" />
+    <ClInclude Include="renderer\dx\driver_dx.hpp" />
+    <ClInclude Include="renderer\driver.hpp" />
+    <ClInclude Include="renderer\dx\helper_dx.hpp" />
+    <ClInclude Include="renderer\vk\helper_vk.hpp" />
+    <ClInclude Include="renderer\obj_asset.hpp" />
+    <ClInclude Include="renderer\renderable.hpp" />
+    <ClInclude Include="renderer\dx\renderable_dx.hpp" />
+    <ClInclude Include="renderer\vk\renderable_vk.hpp" />
+    <ClInclude Include="renderer\renderer.hpp" />
+    <ClInclude Include="renderer\vk\driver_vk.hpp" />
     <ClInclude Include="System.hpp" />
-    <ClInclude Include="ThreadPool.hpp" />
+    <ClInclude Include="util\thread_pool.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -56,7 +56,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <ProjectName>Ivy3Renderer</ProjectName>
+    <ProjectName>Nebula</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -105,19 +105,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)/include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
