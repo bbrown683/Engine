@@ -36,8 +36,7 @@ struct Gpu {
 	uint32_t vendorId;
 	uint32_t deviceId;
     char name[256];
-    uint32_t memory;
-    bool software;
+    size_t memory;
 };
 
 struct DisplayMode {

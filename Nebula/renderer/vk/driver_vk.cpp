@@ -62,17 +62,25 @@ bool DriverVk::initialize() {
 		uint32_t counter = 0;
 		for (vk::PhysicalDevice physicalDevice : m_PhysicalDevices) {
 			vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
+			// Skip software implementations.
+			if (properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu)
+				continue;
 
 			Gpu gpu;
 			gpu.id = counter++;
 			std::strcpy(gpu.name, properties.deviceName);
 			gpu.vendorId = properties.vendorID;
 			gpu.deviceId = properties.deviceID;
-			gpu.memory = properties.limits.maxMemoryAllocationCount;
-			gpu.software = properties.deviceType == vk::PhysicalDeviceType::eVirtualGpu ? true : false;
-
+			vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
+			for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; i++) {
+				if (memoryProperties.memoryHeaps[i].flags & vk::MemoryHeapFlagBits::eDeviceLocal) {
+					gpu.memory = static_cast<size_t>(memoryProperties.memoryHeaps[i].size / 1024 / 1024);
+					break;
+				}
+			}
+			
 			LOG_F(INFO, "\t[%u]: %s", gpu.id, gpu.name);
-			LOG_F(INFO, "\t\tVideoMemory: %u", gpu.memory);
+			LOG_F(INFO, "\t\tVideoMemory: %uMB ", gpu.memory);
 			LOG_F(INFO, "\t\tVendorId: %u", gpu.vendorId);
 			LOG_F(INFO, "\t\tDeviceId: %u", gpu.deviceId);
 			addGpu(gpu);

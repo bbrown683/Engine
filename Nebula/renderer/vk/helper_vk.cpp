@@ -8,8 +8,10 @@
 bool HelperVk::hasRequiredInstanceExtensions() {
 	std::vector<vk::ExtensionProperties> extensionProperties = vk::enumerateInstanceExtensionProperties();
 
+	LOG_F(INFO, "Enumerating Vulkan extensions: ");
 	bool surfaceKHRSupport = false, wmKHRSupport = false;
 	for (vk::ExtensionProperties extension : extensionProperties) {
+		LOG_F(INFO, "\t%s", extension.extensionName);
 		if (strcmp(extension.extensionName, VK_KHR_SURFACE_EXTENSION_NAME) == 0)
 			surfaceKHRSupport = true;
 		if (strcmp(extension.extensionName,

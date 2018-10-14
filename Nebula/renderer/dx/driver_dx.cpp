@@ -79,13 +79,15 @@ bool DriverDX::initialize() {
 	for (size_t i = 0; i < m_pAdapters.size(); i++) {
 		DXGI_ADAPTER_DESC1 adapterDesc;
 		m_pAdapters[i]->GetDesc1(&adapterDesc);
+		// Skip software implementations.
+		if (adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			continue;
 
 		Gpu gpu;
 		gpu.id = static_cast<uint32_t>(i);
 		gpu.vendorId = adapterDesc.VendorId;
 		gpu.deviceId = adapterDesc.DeviceId;
-		gpu.memory = static_cast<uint32_t>(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
-		gpu.software = adapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE ? true : false;
+		gpu.memory = adapterDesc.DedicatedVideoMemory / 1024 / 1024;
 		size_t length = std::wcstombs(gpu.name, adapterDesc.Description, 256);
 		if (length != -1)
 			gpu.name[length] = '\0';
@@ -103,10 +105,10 @@ bool DriverDX::selectGpu(uint32_t id) {
     if (id >= m_pAdapters.size())
         return false;
 
-	ComPtr<IDXGIAdapter1> adapter = m_pAdapters[id].Get();
+	IDXGIAdapter1* adapter = m_pAdapters[id].Get();
 
 	// Create the main rendering device.
-	if (auto device = HelperDX::createDevice(adapter.Get()); device.has_value())
+	if (auto device = HelperDX::createDevice(adapter); device.has_value())
 		m_pDevice.Swap(device.value());
 	else {
 		LOG_F(FATAL, "Failed to create device.");
@@ -162,11 +164,18 @@ bool DriverDX::selectGpu(uint32_t id) {
 
 	m_FrameIndex = m_pSwapchain->GetCurrentBackBufferIndex();
 
+	if (auto rootSignature = HelperDX::createRootSignature(m_pDevice.Get()); rootSignature.has_value())
+		m_pRootSignature.Swap(rootSignature.value());
+	else {
+		LOG_F(FATAL, "Failed to create root signature");
+		return false;
+	}
+
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
 	descriptorHeapDesc.NumDescriptors = m_RenderTargetCount;
 	descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	if(FAILED(m_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_pDescriptorHeap))))
+	if (FAILED(m_pDevice->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_pDescriptorHeap))))
 		return false;
 	m_HeapSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
@@ -177,13 +186,6 @@ bool DriverDX::selectGpu(uint32_t id) {
 			return false;
 		m_pDevice->CreateRenderTargetView(m_pRenderTargets[i].Get(), nullptr, destDescriptor);
 		destDescriptor.Offset(1, m_HeapSize);
-	}
-
-	if (auto rootSignature = HelperDX::createRootSignature(m_pDevice.Get()); rootSignature.has_value())
-		m_pRootSignature.Swap(rootSignature.value());
-	else {
-		LOG_F(FATAL, "Failed to create root signature");
-		return false;
 	}
 
 	// Set viewport and scissor rects.
