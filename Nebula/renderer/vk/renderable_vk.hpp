@@ -45,11 +45,11 @@ public:
 private:
     DriverVk* m_pDriver;
 	vk::UniqueCommandBuffer m_pSecondaryBuffer;
-	vk::UniqueBuffer m_IndexBuffer;
-	vk::UniqueBuffer m_VertexBuffer;
-	vk::UniqueDeviceMemory m_IndexBufferMemory;
-	vk::UniqueDeviceMemory m_VertexBufferMemory;
-    vk::UniquePipeline m_Pipeline;
-    vk::UniqueRenderPass m_RenderPass;
+	vk::UniqueBuffer m_pIndexBuffer;
+	vk::UniqueBuffer m_pVertexBuffer;
+	vk::UniqueDeviceMemory m_pIndexBufferMemory;
+	vk::UniqueDeviceMemory m_pVertexBufferMemory;
+    vk::UniquePipeline m_pPipeline;
+    vk::UniqueRenderPass m_pRenderPass;
     std::vector<vk::PipelineShaderStageCreateInfo> m_ShaderStages;
 };

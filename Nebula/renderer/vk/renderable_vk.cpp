@@ -28,9 +28,7 @@ SOFTWARE.
 
 RenderableVk::RenderableVk(DriverVk* pDriver) : m_pDriver(pDriver) {}
 
-RenderableVk::~RenderableVk() {
-
-}
+RenderableVk::~RenderableVk() {}
 
 bool RenderableVk::build() {
 	vk::CommandBufferAllocateInfo allocateInfo;
@@ -60,5 +58,16 @@ bool RenderableVk::setIndices(std::vector<uint16_t> indices) {
 }
 
 bool RenderableVk::setVertices(std::vector<Vertex> vertices) {
+	vk::BufferCreateInfo bufferInfo;
+	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+	bufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+	bufferInfo.size = static_cast<vk::DeviceSize>(sizeof Vertex * vertices.size());
+	m_pVertexBuffer = m_pDriver->getDevice()->createBufferUnique(bufferInfo);
+
+	vk::MemoryRequirements memoryRequirements = m_pDriver->getDevice()->getBufferMemoryRequirements(m_pVertexBuffer.get());
+	vk::MemoryAllocateInfo allocateInfo;
+	allocateInfo.allocationSize = memoryRequirements.size;
+	
+	m_pDriver->getDevice()->allocateMemoryUnique(allocateInfo);
     return false;
 }
