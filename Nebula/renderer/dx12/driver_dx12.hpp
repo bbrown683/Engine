@@ -38,6 +38,15 @@ using Microsoft::WRL::ComPtr;
 #include "renderer/driver.hpp"
 #include "thirdparty/glm/glm.hpp"
 
+#include <d3dcompiler.h>
+#include <DirectXMath.h>
+#include "renderer/renderable.hpp"
+
+struct VERTEX {
+	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT4 color;
+};
+
 class RenderableDX12;
 class DriverDX12 : public Driver {
 public:
@@ -49,14 +58,15 @@ public:
     bool selectGpu(uint32_t id) override;
 	bool prepareFrame() override;
     bool presentFrame() override;
+	void waitOnFence();
+	void nextFrame();
+	void build();
     const ComPtr<ID3D12Device>& getDevice() const;
 	const ComPtr<ID3D12GraphicsCommandList>& getCommandList() const;
-	const ComPtr<ID3D12CommandAllocator>& getCommandAllocator() const;
 	const ComPtr<ID3D12CommandAllocator>& getBundledAllocator() const;
 	const ComPtr<ID3D12RootSignature>& getRootSignature() const;
 private:
 #ifdef _DEBUG
-	ComPtr<IDXGIDebug1> m_pDxgiDebug;
 	ComPtr<ID3D12Debug1> m_pDebug;
 #endif
 	ComPtr<IDXGIFactory5> m_pFactory;
@@ -64,11 +74,13 @@ private:
 	std::vector<ComPtr<IDXGIAdapter1>> m_pAdapters;
 	ComPtr<IDXGISwapChain3> m_pSwapchain;
     ComPtr<ID3D12CommandQueue> m_pCommandQueue;
-	ComPtr<ID3D12CommandAllocator> m_pCommandAllocator;
+	std::vector<ComPtr<ID3D12CommandAllocator>> m_pCommandAllocators;
+	std::vector<ComPtr<ID3D12Resource>> m_pRenderTargets;
+	std::vector<UINT64> m_FenceValues;
 	ComPtr<ID3D12CommandAllocator> m_pBundleAllocator;
 	ComPtr<ID3D12RootSignature> m_pRootSignature;
-	ComPtr<ID3D12DescriptorHeap> m_pDescriptorHeap;
-	std::vector<ComPtr<ID3D12Resource>> m_pRenderTargets;
+	ComPtr<ID3D12DescriptorHeap> m_pRenderTargetHeap;
+	ComPtr<ID3D12DescriptorHeap> m_pDepthStencilHeap;
 	D3D12_VIEWPORT m_Viewport;
 	D3D12_RECT m_ScissorRect;
 	ComPtr<ID3D12GraphicsCommandList> m_pCommandList;
@@ -76,7 +88,14 @@ private:
 	HANDLE m_pFenceEvent;
 	UINT m_FenceValue;
 	UINT m_FrameIndex; 
-	UINT m_HeapSize;
+	UINT m_renderTargetHeapSize;
 	UINT m_RenderTargetCount;
 	glm::vec4 m_ClearColor;
+
+	ComPtr<ID3D12PipelineState> m_pPipelineState;
+	ComPtr<ID3DBlob> m_pVertexShader;
+	ComPtr<ID3DBlob> m_pPixelShader;
+	ComPtr<ID3D12Resource> m_pVertexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
+	float aspectRatio;
 };
